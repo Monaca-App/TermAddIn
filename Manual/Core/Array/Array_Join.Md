@@ -75,15 +75,21 @@ sequenceDiagram
     Engine->>Cmd: ExecuteAsync(TargetKey, Data, Delimiter)
     activate Cmd
     Cmd->>Target: GetTargetValue(TargetKey)
-    Target-->>Cmd: ベーステーブル文字列 (BaseText)
-    Cmd->>Cmd: 追加データ文字列解決 (AppendText)
-    Cmd->>Buffer: JoinColumnsHorizontally(BaseText, AppendText, Delimiter)
-    activate Buffer
-    Buffer->>Buffer: 行数比較・不足行の空セル自動補填 (Auto-Resize)
-    Buffer-->>Cmd: 水平結合後のテーブル文字列
-    deactivate Buffer
-    Cmd->>Target: SetTargetValue(TargetKey, MergedTableText)
-    Cmd-->>Engine: 実行完了 (Success)
+    alt 対象キーが定義済みの場合
+        Target-->>Cmd: ベーステーブル文字列 (BaseText)
+        Cmd->>Cmd: 追加データ文字列解決 (AppendText)
+        Cmd->>Buffer: JoinColumnsHorizontally(BaseText, AppendText, Delimiter)
+        activate Buffer
+        Buffer->>Buffer: 行数比較・不足行の空セル自動補填 (Auto-Resize)
+        Buffer-->>Cmd: 水平結合後のテーブル文字列
+        deactivate Buffer
+        Cmd->>Target: SetTargetValue(TargetKey, MergedTableText)
+        Cmd-->>Engine: 実行完了 (Success)
+    else 未定義キー指定
+        Target-->>Cmd: 未定義キーエラー
+        Cmd->>Cmd: エラーログ出力 (_log.LogError)
+        Cmd-->>Engine: 実行失敗・安全停止 (Halt)
+    end
     deactivate Cmd
 ```
 

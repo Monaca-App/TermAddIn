@@ -2,11 +2,11 @@
 
 ## 概要
 
-`Param_Mod` は、指定されたコマンドのパラメータ値を除数（`<Divisor>`）で割った余り（剰余）を算出し、その結果でパラメータ値を更新する共通パラメータ・呼出・ループ制御系コマンドです。  
+`Param_Mod` は、指定されたコマンドのパラメータ値を除数（`<ModValue>`）で割った余り（剰余）を算出し、その結果でパラメータ値を更新する共通パラメータ・呼出・ループ制御系コマンドです。  
 ループ内の周期処理判定（例: $N$ 回ごとにログ出力する等）やリングカウンタ計算に使用され、ゼロ除算防止ガードおよび統一フォーマット指定子（10 進・16 進・2 進）に対応しています。
 
 > 💡 **補足**  
-> 本コマンドは 共通基盤コマンドです。
+> 本コマンドは共通基盤コマンドです。
 
 ---
 
@@ -15,17 +15,17 @@
 ### コマンド構文
 
 ```csv
-,SEQUENCE, [ステップキー], Param_Mod, "[対象コマンド名]", "[対象キー1]", "[除数1]", "[対象キー2]", "[除数2]"
+,SEQUENCE, [ステップキー], Param_Mod, "[対象コマンド名(CommandName)]", "[対象キー1(ParamKey)]", "[除数1(ModValue)]", "[対象キー2]", "[除数2]"
 ```
 
 ### パラメータ（引数）一覧
 
 | 引数位置 | 引数名 | 説明 | 指定方法 / 有効な入力値 |
 | :--- | :--- | :--- | :--- |
-| 引数1 | CommandName | 剰余計算対象のパラメータを保持するマクロコマンド名（必須）。 | `COMMAND` で定義されたコマンド名（例: `"MOD_CALC"`）または `$PARAM$` 置換 |
-| 引数2 | ParamKey1 | 第 1 ペアの計算対象パラメータキー名（必須）。 | 対象コマンド内の `PARAM` キー名（例: `"MOD_VAL"`, `"1"`） |
-| 引数3 | Divisor1 | 第 1 ペアの除数（0 以外の数値・必須）。 | 数値リテラル（`"10"`, `"0x10"`）または `$PARAM$` 置換 |
-| 引数4以降 | ParamKeyN, DivisorN | 第 2 ペア以降の `[対象キーN], [除数N]` の組み合わせ（任意、可変長ペア）。 | 2 個 1 組のペア形式で任意個数まで連続指定可能 |
+| 引数1 | `CommandName` | 剰余計算対象のパラメータを保持するマクロコマンド名（必須）。 | `COMMAND` で定義されたコマンド名（例: `"MOD_CALC"`）または `$PARAM$` 置換 |
+| 引数2 | `ParamKey` | 第 1 ペアの計算対象パラメータキー名（必須）。 | 対象コマンド内の `PARAM` キー名（例: `"MOD_VAL"`, `"1"`） |
+| 引数3 | `ModValue` | 第 1 ペアの剰余算除数（`0` 以外の数値・必須）。 | 数値リテラル（`"10"`, `"0x10"`）または `$PARAM$` 置換 |
+| 引数4以降 | `ParamKeyN, ModValueN` | 第 2 ペア以降の `[対象キーN], [除数N]` の組み合わせ（任意、可変長ペア）。 | 2 個 1 組のペア形式で任意個数まで連続指定可能 |
 
 ---
 
@@ -36,7 +36,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 引数 1 に対象コマンド名を指定する際、先頭に `@` を付与した場合は共通基盤（`GENERAL`）を対象とします。（適用可能な引数: 引数 1 `CommandName`）
 * **カンマのエスケープ**: 引数文字列自体にカンマを含める場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `ParamMod`, `Mod`, `PARAM_Mod`
+* **エイリアス（別名）**: `Mod`
 
 ---
 
@@ -73,17 +73,16 @@ sequenceDiagram
     participant Cmd as "Param_ModCommand"
     participant TargetCmd as "対象コマンド (IParameterizedCommand)"
 
-    Engine->>Cmd: ExecuteAsync(CommandName, Key1, Divisor1, ...)
+    Engine->>Cmd: ExecuteAsync(CommandName, ParamKey, ModValue, ...)
     activate Cmd
-    Cmd->>Cmd: 対象コマンド解決 & ペア数検証
-    loop 各 (ParamKeyN, DivisorN) ペア
-        Cmd->>TargetCmd: GetParam(ParamKeyN)
-        TargetCmd-->>Cmd: 現在値文字列 (CurrentStr)
-        Cmd->>Cmd: 基数自動認識パース (CurrentVal, DivisorVal)
-        alt 有効な数値 かつ DivisorVal != 0 の場合
-            Cmd->>Cmd: Result = CurrentVal % DivisorVal
-            Cmd->>TargetCmd: SetParam(ParamKeyN, Result.ToString())
-        else ゼロ除算 (DivisorVal == 0) または 非数値エラー
+    Cmd->>Cmd: 対象コマンド解決 ＆ ペア数検証
+    loop 各 (ParamKeyN, ModValueN) ペア
+        Cmd->>TargetCmd: ResolveParameter(ParamKeyN)
+        TargetCmd-->>Cmd: 現在値文字列 (CurrentRaw)
+        Cmd->>Cmd: TryCalculateFormatted(CurrentRaw, ModValueN, "%")
+        alt 有効な数値 かつ ModValueN != 0 の場合
+            Cmd->>TargetCmd: targetParam.Value = ResultVal
+        else ゼロ除算 (ModValueN == 0) または 非数値エラー
             Cmd->>Cmd: エラーログ出力 (_log.LogError)
             Cmd-->>Engine: 実行失敗・即時中断 (Halt)
         end
@@ -98,10 +97,10 @@ sequenceDiagram
 
 入力データの異常や実行時エラーに対し、解析・実行エンジンが実行するセーフティ規約です。
 
-1. **ゼロ除数（`Divisor == 0`）指定時の安全防護**:
-   - 除数 `<Divisor>` に `0` が指定された場合、`NaN` の発生や未処理例外を防止するためエラーログ（`_log.LogError`）を記録して直ちにシーケンスを安全停止（Halt）します。
-2. **非数値文字列・未定義キーの検証**:
-   - 数値として解釈できない文字列や未定義のパラメータキーが指定された場合、エラーログを記録して即時中断します。
+1. **ゼロ除数（`ModValue == 0`）指定時の安全防護**:
+   - 除数 `<ModValue>` に `0` が指定された場合、`NaN` の発生や未処理例外を防止するためエラーログ（`_log.LogError`）を記録して直ちにシーケンスを安全停止（`AnalysisResultStatus.Halt`）します。
+2. **非数値文字列・未定義キー・ペア数不一致の検証**:
+   - 数値として解釈できない文字列、未定義のコマンド／パラメータキー、またはペアを成さない引数個数が指定された場合、エラーログを記録して即時中断（`Halt`）します。
 
 ---
 
@@ -113,13 +112,12 @@ sequenceDiagram
 
 * **実行トリガー**: `RunUnitTest()` メソッドの呼び出し
 * **有効化条件**: システム全体の最小ログレベル（`ErrorLogger.MinimumLevel`）が `LogLevel.Test` であること（それ以外の場合は無効化ガードにより早期リターン）
-* **検証結果出力**: `_log.LogTest` によるログ出力。検証失敗時は `_log.LogError`、予期せぬ例外発生時は `_log.LogCritical` で記録。
+* **検証結果出力**: `_log.LogTest` によるログ出力。検証失敗時は `false` 返却、予期せぬ例外発生時は `_log.LogCritical` で記録し、`finally` ブロックで `AnalysisContext` をリセットします。
 
 ### テストケース一覧
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 整数剰余計算（`"17" % "5"`） | `"2"` に更新される | 剰余演算の基本動作検証 |
-| **2** | 正常系 | 16進フォーマット指定（`"0x1F" % "0x10"`） | `"15"` に更新される | 統一フォーマット指定子（基数自動認識）の検証 |
-| **3** | 異常系 | 除数に `"0"` を指定（`"17" % "0"`） | ゼロ除算エラーが出力され `Failure` で安全停止する | ゼロ除数ガードの検証 |
+| **1** | 正常系 | コマンド `"DCV"` の `"1"`（初期値 `"17"`）・`"HEX_REM"`（初期値 `"0x1F"`）に対し `("DCV", "1", "5", "HEX_REM", "0x10")` を実行 | `"1"` が `"2"` に、`"HEX_REM"` が `"0x0F"` に更新され `Success` が返却される | 10 進・16 進の基数維持剰余演算および複数ペア一括実行の検証 |
+| **2** | 異常系 | 除数に `"0"` を指定 `("DCV", "1", "0")` して実行 | エラーログが出力され `AnalysisResultStatus.Halt` で安全停止する | ゼロ除算（`ModValue == 0`）ガードの検証 |
 

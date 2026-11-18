@@ -15,14 +15,15 @@
 ### コマンド構文
 
 ```csv
-,SEQUENCE, [ステップキー], Time_Stamp, "[有効/無効フラグ(Flag: ON / OFF / 1 / 0 / true / false)]"
+,SEQUENCE, [ステップキー], Time_Stamp, "[モードまたは格納先キー(TargetOrMode)]", "[日時書式(Format)]"
 ```
 
 ### パラメータ（引数）一覧
 
 | 引数位置 | 引数名 | 説明 | 指定方法 / 有効な入力値 |
 | :--- | :--- | :--- | :--- |
-| 引数1 | Flag | タイムスタンプ付与の有効／無効切り替えフラグ（必須 ※旧 `TimeOn`/`TimeOff` 呼出時は省略可）。 | 有効化: `"1"`, `"true"`, `"ON"`<br/>無効化: `"0"`, `"false"`, `"OFF"` |
+| 引数1 | `TargetOrMode` | タイムスタンプ表示モード切替フラグ、または現在日時文字列の格納先キー（任意・既定値: `"ON"`）。 | モード切替: `"ON"`/`"1"`/`"true"`、`"OFF"`/`"0"`/`"false"`<br/>日時取得: 格納先 `PARAM` キー名またはレジスタ |
+| 引数2 | `Format` | 日時取得モード時に適用する日時フォーマット文字列（任意・既定値: `"yyyy/MM/dd HH:mm:ss"`）。 | 標準 `.NET` 日時書式文字列（例: `"HH:mm:ss.fff"`）または `$PARAM$` 置換 |
 
 ---
 
@@ -80,7 +81,7 @@ sequenceDiagram
     Cmd->>Cmd: Flag 文字列の真偽判定 ("1"/"true"/"ON" vs "0"/"false"/"OFF")
     alt 有効なフラグ指定
         Cmd->>Ring: IsTimestampEnabled = EnabledFlag
-        Cmd->>UI: SetTimestampUiState(EnabledFlag) (InvokeRequired スレッドセーフ同期)
+        Cmd->>UI: SetTimestampUiState(EnabledFlag) (UIスレッド安全同期)
         Cmd-->>Engine: 実行完了 (Success)
     else 不正なフラグ文字列
         Cmd->>Cmd: エラーログ出力 (_log.LogError)
@@ -95,8 +96,8 @@ sequenceDiagram
 
 入力データの異常や実行時エラーに対し、解析・実行エンジンが実行するセーフティ規約です。
 
-1. **UI スレッドとのスレッドセーフ連動（`InvokeRequired` 対応）**:
-   - バックグラウンドのシーケンス実行スレッドからメイン画面のメニュー状態（`MnuTimeOn` / `MnuTimeOff`）を更新する際、クロススレッド例外を防ぐため必ず `InvokeRequired` チェックを介してスレッドセーフに反映します。
+1. **バックグラウンド実行時の UI スレッド安全連動**:
+   - バックグラウンドのシーケンス実行スレッドからメイン画面のメニュー表示状態を更新する際、スレッド間競合やフリーズを防ぐため安全なスレッド同期機構を介して反映します。
 2. **不正なフラグ値の検証**:
    - `"1"`, `"0"`, `"true"`, `"false"`, `"ON"`, `"OFF"` 以外の解釈不能な文字列が指定された場合は、エラーログ（`_log.LogError`）を記録して安全停止します。
 

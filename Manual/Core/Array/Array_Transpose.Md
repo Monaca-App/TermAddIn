@@ -75,15 +75,21 @@ sequenceDiagram
     Engine->>Cmd: ExecuteAsync(Target, DstTarget, Delimiter)
     activate Cmd
     Cmd->>Target: GetTargetValue(Target)
-    Target-->>Cmd: 元テーブル文字列
-    Cmd->>Buffer: TransposeTable(SourceText, Delimiter)
-    activate Buffer
-    Buffer->>Buffer: 最大列数算出・不揃い行の空セル正規化
-    Buffer->>Buffer: Grid[y][x] から Grid[x][y] へ転置再構築
-    Buffer-->>Cmd: 転置後のテーブル文字列
-    deactivate Buffer
-    Cmd->>Target: SetTargetValue(DstTarget ?? Target, TransposedText)
-    Cmd-->>Engine: 実行完了 (Success)
+    alt 対象キーが定義済みの場合
+        Target-->>Cmd: 元テーブル文字列
+        Cmd->>Buffer: TransposeTable(SourceText, Delimiter)
+        activate Buffer
+        Buffer->>Buffer: 最大列数算出・不揃い行の空セル正規化
+        Buffer->>Buffer: Grid[y][x] から Grid[x][y] へ転置再構築
+        Buffer-->>Cmd: 転置後のテーブル文字列
+        deactivate Buffer
+        Cmd->>Target: SetTargetValue(DstTarget ?? Target, TransposedText)
+        Cmd-->>Engine: 実行完了 (Success)
+    else 未定義キー指定
+        Target-->>Cmd: 未定義キーエラー
+        Cmd->>Cmd: エラーログ出力 (_log.LogError)
+        Cmd-->>Engine: 実行失敗・安全停止 (Halt)
+    end
     deactivate Cmd
 ```
 
@@ -95,8 +101,8 @@ sequenceDiagram
 
 1. **行ごとに列数が異なる不揃いテーブル（ジャグ配列）の安全な正規化**:
    - 一部の行で列数が少ない場合でも `IndexOutOfRangeException` を発生させず、テーブル全体の最大列数に合わせて不足セルを空文字 `""` で補完してから転置を行います。
-2. **空テーブルに対する転置実行**:
-   - 転置元 `<Target>` が空文字列 `""` の場合は、エラーとせず格納先にも空文字列 `""` を設定して正常終了します。
+2. **空テーブルに対する転置実行および未定義キー防御**:
+   - 転置元 `<Target>` が空文字列 `""` の場合はエラーとせず空文字列 `""` を設定して正常終了し、未定義キーが指定された場合は `_log.LogError` を記録して安全停止（Halt）します。
 
 ---
 
@@ -117,4 +123,5 @@ sequenceDiagram
 | **1** | 正常系 | 3列×2行テーブルの転置（`"A,B,C\r\n1,2,3"`） | `"A,1\r\nB,2\r\nC,3"`（2列×3行）が出力される | 行列転置の基本動作検証 |
 | **2** | 正常系 | `<DstTarget>` 省略時のインプレース転置 | `<Target>` 自身が転置後のテーブルで上書きされる | 省略時インプレース更新の検証 |
 | **3** | 正常系 | 列数が不揃いな行を含むテーブルの転置 | 不足セルが空文字補完されてクラッシュせず転置される | ジャグ配列に対する安全正規化の検証 |
+| **4** | 異常系 | 未定義の `<Target>` キーを指定して実行 | エラーログが出力され `Halt` で安全停止する | 未定義キーアクセス防御の検証 |
 

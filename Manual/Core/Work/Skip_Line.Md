@@ -2,11 +2,11 @@
 
 ## 概要
 
-`Skip_Line` は、Term 非同期受信リングバッファ（または指定された `<SourceBuffer>`）の先頭から指定行数分（`<SkipCount>`、既定 1 行）を読み飛ばして破棄し、読み取りポインタを進める Term / GPIB 共通データ・ワーク処理系コマンド（`Common.Commands.Work.dll`）です。  
-シリアル・Telnet 通信におけるコマンドエコーバック行や不要なバナーヘッダ行を除去してから後続の [`Set_Data`](./Set_Data.Md) / [`Get_Line`](./Get_Line.Md) で本データを抽出する際に使用します。
+`Skip_Line` は、通信受信バッファ（`RecData`）または指定された `<SourceBuffer>` の先頭から指定行数分（`<LineCount>`、既定 1 行）を読み飛ばして破棄し、受信行読み取りポインタを進める Term / GPIB 共通データ・ワーク処理系コマンド（`Common.Commands.Work.dll`）です。  
+シリアル・Telnet・GPIB 通信におけるコマンドエコーバック行や不要なバナーヘッダ行を除去してから後続の [`Set_Data`](./Set_Data.Md) / [`Get_Line`](./Get_Line.Md) で本データを抽出する際に使用します。
 
 > 💡 **補足**  
-> 本コマンドは 共通基盤コマンドです。
+> 本コマンドは共通基盤コマンドです。
 
 ---
 
@@ -15,15 +15,15 @@
 ### コマンド構文
 
 ```csv
-,SEQUENCE, [ステップキー], Skip_Line, "[読み飛ばし行数(SkipCount)]", "[対象バッファキー(SourceBuffer)]"
+,SEQUENCE, [ステップキー], Skip_Line, "[読み飛ばし行数(LineCount): 1]", "[対象バッファキー(SourceBuffer)]"
 ```
 
 ### パラメータ（引数）一覧
 
 | 引数位置 | 引数名 | 説明 | 指定方法 / 有効な入力値 |
 | :--- | :--- | :--- | :--- |
-| 引数1 | SkipCount | 先頭から読み飛ばして破棄する行数（任意・省略可・既定値: `"1"`）。 | 1 以上の整数（例: `"1"`, `"2"`）または `$PARAM$` 置換 |
-| 引数2 | SourceBuffer | 操作対象のテキストを保持するパラメータキー名（任意・省略可）。 | 省略時は Term 非同期受信リングバッファを対象とする |
+| 引数1 | `LineCount` | 先頭から読み飛ばして破棄する行数（任意・省略可・既定値: `1`）。 | `1`〜`1000000` の整数（例: `"1"`, `"2"`）または `$PARAM$` 置換 |
+| 引数2 | `SourceBuffer` | 操作対象のテキストを保持するパラメータキー名（任意・省略可・既定値: `""`）。 | 省略時は共通受信バッファ（`RecData` / `IWorkBufferHost`）を対象とする |
 
 ---
 
@@ -34,7 +34,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: 引数文字列自体にカンマを含める場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `SkipLine`, `Analysis_Term_SkipLine`, `GpibSkipLine`
+* **エイリアス（別名）**: `LineSkip`, `Term_SkipLine`, `Analysis_Term_SkipLine`, `Gpib_SkipLine`
 
 ---
 
@@ -57,31 +57,31 @@ COMMAND, "READ_WITHOUT_ECHO", "RESULT_LINE"
 
 ### 実行時の挙動・変数変化
 
-* **実行前の状態**: 受信リングバッファに `"READ_ADC\r\n4095\r\n"`（1 行目がエコーバック、2 行目が ADC 値）が蓄積されている状態。
+* **実行前の状態**: 受信バッファに `"READ_ADC\r\n4095\r\n"`（1 行目がエコーバック、2 行目が ADC 値）が蓄積されている状態。
 * **実行後の状態**: ステップ `030` の `Skip_Line, 1` により先頭の `"READ_ADC\r\n"` が破棄され、ステップ `040` の `Set_Data` で `"RESULT_LINE"` に `"4095"` のみが格納されます。
 
 ---
 
 ## 🔄 動作フロー（シーケンス図）
 
-本コマンド実行時における、シーケンス実行エンジン、コマンドクラス（`Skip_LineCommand`）、および受信リングバッファ間のインタラクションを示すシーケンス図です。
+本コマンド実行時における、シーケンス実行エンジン、コマンドクラス（`Skip_LineCommand`）、および受信バッファ間のインタラクションを示すシーケンス図です。
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "Skip_LineCommand (Common.Commands.Work)"
-    participant Ring as "TermRingBufferManager / SourceBuffer"
+    participant Ring as "IWorkBufferHost / SourceBuffer"
 
-    Engine->>Cmd: ExecuteAsync(SkipCount, SourceBuffer)
+    Engine->>Cmd: Func / ExecuteAsync(LineCount, SourceBuffer)
     activate Cmd
-    Cmd->>Cmd: SkipCount >= 1 の整数検証
-    alt SkipCount >= 1
-        Cmd->>Ring: DiscardLines(SkipCount)
-        Ring-->>Cmd: 先頭 SkipCount 行破棄完了 (行数不足時は全クリア)
+    Cmd->>Cmd: LineCount >= 1 の整数検証 (省略時は 1)
+    alt LineCount >= 1
+        Cmd->>Ring: SkipLinesFromText(LineCount) ＆ InitializeReceiveLinePointer
+        Ring-->>Cmd: 先頭 LineCount 行破棄完了 (行数不足時は空文字化)
         Cmd-->>Engine: 実行完了 (Success)
-    else SkipCount < 0 または 非数値
-        Cmd->>Cmd: エラーログ出力 (_log.LogError)
+    else LineCount <= 0 または 非数値
+        Cmd->>Cmd: SetErrorAndHalt(-11)
         Cmd-->>Engine: 実行失敗・安全停止 (Halt)
     end
     deactivate Cmd
@@ -93,10 +93,10 @@ sequenceDiagram
 
 入力データの異常や実行時エラーに対し、解析・実行エンジンが実行するセーフティ規約です。
 
-1. **バッファ内の残行数より多い `<SkipCount>` が指定された場合**:
-   - 例外クラッシュを発生させず、バッファ内の全行を安全に破棄（空状態にクリア）して正常終了します。
-2. **負数または非数値の指定**:
-   - `<SkipCount>` に負数や非数値文字列が指定された場合は、エラーログ（`_log.LogError`）を記録して直ちに安全停止（Halt）します。
+1. **バッファ内の残行数より多い `<LineCount>` が指定された場合**:
+   - 例外クラッシュを発生させず、バッファ内の全行を安全に破棄（空文字列 `""` にクリア）して正常終了します。
+2. **`0` 以下の数値または非数値の指定**:
+   - `<LineCount>` に `0` 以下の整数や非数値文字列が指定された場合は、`SetErrorAndHalt(-11, ...)` を記録して直ちに安全停止（Halt）します。
 
 ---
 
@@ -108,13 +108,14 @@ sequenceDiagram
 
 * **実行トリガー**: `RunUnitTest()` メソッドの呼び出し
 * **有効化条件**: システム全体の最小ログレベル（`ErrorLogger.MinimumLevel`）が `LogLevel.Test` であること（それ以外の場合は無効化ガードにより早期リターン）
-* **検証結果出力**: `_log.LogTest` によるログ出力。検証失敗時は `_log.LogError`、予期せぬ例外発生時は `_log.LogCritical` で記録。
+* **検証結果出力**: `_log.LogTest` によるログ出力。検証失敗時は `_log.LogError`、予期せぬ例外発生時は `_log.LogCritical` で記録し、`finally` ブロックでテスト用 `SBuf` および `Variables` をクリアします。
 
 ### テストケース一覧
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 3行データに対して `Skip_Line, "1"` を実行 | 先頭1行が削除され、残り2行が保持される | 先頭行スキップの基本動作検証 |
-| **2** | 正常系 | 2行データに対して `Skip_Line, "10"`（超過行数）を実行 | 例外を投げずバッファが空文字列 `""` になる | 超過行数指定時の安全クリア検証 |
-| **3** | 異常系 | 負の行数（`"-1"`）を指定 | エラーログが出力され `Failure` で安全停止する | 不正引数ガードの検証 |
+| **1** | 正常系 | `RecData = "LINE1\r\nLINE2\r\nLINE3"` に対して `("2")` を指定して実行 | 先頭 2 行が破棄されて `RecData == "LINE3"` となり、`LastInitializedLineCount == 2` に更新される | 指定行数（`LineCount = 2`）スキップの基本動作検証 |
+| **2** | 正常系 | `RecData = "HEADER\r\nPAYLOAD"` に対して引数省略 `()` で実行 | 既定の 1 行が破棄されて `RecData == "PAYLOAD"` となり、`LastInitializedLineCount == 1` に更新される | `LineCount` 省略時（既定値 `1`）のスキップ動作検証 |
+| **3** | 異常系 | 非数値文字列 `("INVALID_NUM")` を指定して実行 | `HasError == true`・`jump == true`・`lstep == "-1"` で安全停止する | 不正な `LineCount` 指定時の安全停止ガード検証 |
+| **4** | 正常系 | `"RAW_BUF"` に `"ECHO_CMD\r\n4095"` を格納し `("1", "RAW_BUF")` を実行 | `"RAW_BUF"` の先頭行が破棄され `"4095"` に更新される | 第 2 引数 `SourceBuffer` 指定による任意パラメータバッファの行スキップ検証 |
 
