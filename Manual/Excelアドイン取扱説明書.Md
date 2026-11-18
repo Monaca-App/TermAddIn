@@ -1,6 +1,6 @@
 ﻿# Excelアドイン取扱説明書 (User Manual)
 
-本ドキュメントは、Excel 上からシリアル機器（RS-232C / UART）、ネットワーク機器（Telnet）、産業用 Modbus 機器、および三菱電機 MELSEC シーケンサ（計算機リンク／MCプロトコル）のテストシーケンスを構築・実行するための **Excel アドイン（TermAddIn）** の総合取扱説明書です。リボン機能、4 列制御ブロックと 3 種実行ボタン（単体・`Step`・`Start`）、Excel エクステンション順序制御、設定ファイル（`Setting.xml`）、除外キャッシュ機構、32bit / 64bit 動作環境、および関連マクロコマンドリファレンスを本書 1 冊に統合して解説します。
+本ドキュメントは、Excel 上からシリアル機器（RS-232C / UART）、ネットワーク機器（Telnet）、産業用 Modbus 機器、ならびに三菱電機 MELSEC・オムロン SYSMAC・キーエンス KV シーケンサのテストシーケンスを構築・実行するための **Excel アドイン（TermAddIn）** の総合取扱説明書です。リボン機能、4 列制御ブロックと 3 種実行ボタン（単体・`Step`・`Start`）、Excel エクステンション順序制御、設定ファイル（`Setting.xml`）、除外キャッシュ機構、32bit / 64bit 動作環境、および関連マクロコマンドリファレンスを本書 1 冊に統合して解説します。
 
 ---
 
@@ -51,7 +51,7 @@ Excel の上部メニュー（Office のアドインタブ `TabAddIns`：表示�
 
 | 図番 | グループID / 表示名 | ボタンID / 表示名 | 主な機能概要 |
 | :---: | :--- | :--- | :--- |
-| **①〜②** | **`tool`**<br>(ツール) | **`Make_Doc`** (マニュアル配置) | 共通基盤（`Core`）および各製品・拡張プラグインの取扱説明書一式を `<設定場所>\Manual\` へ差分同期展開 |
+| **①〜②** | **`tool`**<br>(ツール) | **`Make_Doc`** (マニュアル配置) | 共通基盤（`Core`）および各製品・拡張プラグインの取扱説明書一式を `<設定場所>\Manual\` へ、サンプル資材一式を `<設定場所>\Sample\` へ差分同期展開 |
 | **②** | | **`Save_Style`** (スタイル保存) | 選択行（単体実行行 9 キー／制御ブロック行 6 キー）のセル書式を既定テンプレートとして `Setting.xml` へ保存 |
 | **②** | | **`Start`** (Startボタン配置) | シート上に 4 列制御ブロック（`Start` ボタン・`Step` ボタン・`開始位置`・`現在位置`）を動的配置 |
 | **②** | | **`Delete_Sequence`** (シーケンス削除) | 選択中のシーケンス行（2行分）または制御ブロック行（`Start` / `Step` 両ボタン含む）を安全に削除 |
@@ -63,15 +63,16 @@ Excel の上部メニュー（Office のアドインタブ `TabAddIns`：表示�
 ### 2.1 【ツール】グループ (`tool`：全製品共通リボン機能)
 
 #### 🔘 マニュアル配置 ボタン (`Make_Doc`)
-*   **機能**: アドインに同梱された全製品の技術ドキュメント（総合取扱説明書、各画面マニュアル、共通基盤 `Core` 6 ドメイン・全 42 コマンド仕様書、および導入済み全通信プラグインのコマンド仕様書）を、設定ファイルと同一階層の `Manual` フォルダへ安全に差分同期展開します。
-*   **用途**: 各種コマンドの仕様や取扱説明書をオフライン環境や手元のフォルダで確認したい場合に実行します。
+*   **機能**: アドインに同梱された全製品の技術ドキュメント（オフライン HTML5 形式の総合目次・各画面マニュアル・共通基盤 `Core` コマンド仕様書・導入済み全通信プラグインのコマンド仕様書）と、各通信プロトコルのサンプルマクロ・AIプロンプト群を、設定ファイルと同一階層の `Manual` および `Sample` フォルダへ安全に差分同期展開します。
+*   **用途**: 各種コマンドの仕様や取扱説明書を標準 Web ブラウザでオフライン閲覧したい場合や、各通信プロトコルのサンプルマクロ・AIプロンプトを手元のフォルダで利用したい場合に実行します。
 *   **展開される資材一式**:
-    *   **共通基盤マニュアル (`Manual\Core\`)**: `Param`, `Array`, `Sequence`, `File`, `Work`, および Excel シート順序制御 `Excel`（全 8 件）を含む全 42 コマンド仕様書
-    *   **TermAddIn 本編・拡張プラグインマニュアル (`Manual\TermAddIn\`)**: 画面別取扱説明書（5 件）および登録されている各通信ドメイン（`Comm`, `Telnet`, `Modbus`, `Melco`, `MelcoMC`）のコマンド仕様書一式（同環境に `GpibAddIn` 資材が存在する場合は `Manual\GpibAddIn\` も一括同期されます）
-    *   ※ 標準インストーラー供給元が見つからない特殊環境でのみフォールバックデプロイヤーが動作し、同梱アセット（`ListSample` 含む）を展開します。
+    *   **総合目次 (`Manual\README.html`, `Manual\index.html`)**: 全マニュアルを横断案内するオフライン HTML5 総合目次（各製品の公開ポータルは GitHub リポジトリへ直接リンクされます）
+    *   **共通基盤マニュアル (`Manual\Core\`)**: `Param`, `Array`, `Sequence`, `File`, `Work`, `Port`, および Excel シート順序制御 `Excel`（全 8 件）を含む全コマンド HTML 仕様書
+    *   **TermAddIn 本編・拡張プラグインマニュアル (`Manual\TermAddIn\`)**: 画面別取扱説明書（HTML 5 件＋SVG 図版）および登録されている各通信ドメイン（`Comm`, `Telnet`, `Modbus`, `Melco`, `MelcoMC`, `Omron`, `Keyence`）のコマンド HTML 仕様書一式（同環境に `GpibAddIn` 資材が存在する場合は `Manual\GpibAddIn\` 等も一括同期されます）
+    *   **サンプルマクロ・AIプロンプト資材 (`Sample\TermAddIn\`)**: 各拡張プロトコルのサンプルマクロおよび AI 自動生成プロンプト群（`Sample\TermAddIn\Melco\` の形式1〜5 `Melco_P1.csv`〜`Melco_P5.csv` / `*_prompt.md`、`Sample\TermAddIn\MelcoMC\` の `MelcoMC.csv` / `MelcoMC_prompt.md`、`Sample\TermAddIn\Omron\` の `Omron_FINS.csv` / `Omron_FINS_prompt.md`、`Sample\TermAddIn\Keyence\` の `Keyence_KV.csv` / `Keyence_KV_prompt.md` 等。同環境に `GpibAddIn` 資材が存在する場合は `Sample\GpibAddIn\` も一括同期されます）
 *   **展開先ディレクトリと安全性**:
-    *   **展開先パス**: `<設定ファイルの場所>\Manual\`（既定では `%USERPROFILE%\Desktop\Monaca\Manual\`）
-    *   **差分同期（高速スキップ）**: 既存ファイルを無条件に削除せず、ファイルサイズと最終更新日時を比較して未配置または更新されたファイルのみを安全にコピーします。
+    *   **展開先パス**: `<設定ファイルの場所>\Manual\` および `<設定ファイルの場所>\Sample\`（既定では `%USERPROFILE%\Desktop\Monaca\Manual\` および `%USERPROFILE%\Desktop\Monaca\Sample\`）
+    *   **差分同期（高速スキップ）**: 既存ファイルを無条件に削除せず、最終更新日時を比較して未配置または更新されたファイルのみを安全にコピーします。
 
 #### 🔘 スタイル保存 ボタン (`Save_Style`)
 *   **機能**: 現在アクティブなセルが属する 2 行ブロックの各種書式スタイル情報を読み取り、既定テンプレートとして設定ファイル（`Setting.xml` の共通 `Common` テーブル内 `Styles` セクション）に永続化します。
@@ -180,7 +181,7 @@ Excel の上部メニュー（Office のアドインタブ `TabAddIns`：表示�
 | **コマンド集・プロトコル設定** | `Property` / `Command` / `Comm` / `Telnet` / `Modbus` / `Melco` / `MelcoMC` | `CommandFile`, `PortName`, `BaudRate`, `Parity`, `IpAddress`, `TcpPort`, `SlaveId` 等 | 読み込むマクロスクリプト（CSV）のパス、および各通信プロトコルの接続パラメータをタスク別に保持します。 |
 | **システムログ設定** | `Log` | `Dir` / `File` / `Level` | ログ保存先フォルダ、ファイル名、および出力レベル（`Error`, `Warning`, `Info`, `Debug`, `Save`）を指定します。 |
 | **画面の位置・サイズ** | `Point` | 各画面識別名 | メイン画面・編集画面・プロパティ設定画面の最終表示座標と寸法を保持します。 |
-| **表示フォント・言語設定** | `Properties` / `Setting` | `Font_Name`, `Font_Size`, `ForeColor` / `Language` | ターミナルログ表示フォント設定および UI 表示言語（`""`, `"ja-JP"`, `"en-US"`）を保持します。 |
+| **表示フォント・言語設定** | `Properties` / `Setting` | `Font` / `Language` | ターミナルログ表示フォント設定（`[フォント名],[サイズ],[スタイル],[文字色]` の CSV 1 行形式）および UI 表示言語（`""`, `"ja-JP"`, `"en-US"`）を保持します。 |
 
 ### ② 保守・管理について
 *   **設定のバックアップ**: PC 移行時は `Setting.xml` を移行先の `%USERPROFILE%\Desktop\Monaca\` へコピーすることで、通信条件や 15 キーのスタイル設定をそのまま引き継げます。
@@ -216,6 +217,8 @@ ActiveX コントロールを保持できない非ブック形式（`.csv`, `.ts
 | **Modbus 通信（`TermAnalysis.Modbus`）** | **◯ 完全動作** | **◯ 完全動作** | Modbus RTU / ASCII（COM）および Modbus TCP（Ethernet）ともに完全動作。 |
 | **MELSEC 計算機リンク（`TermAnalysis.Melco`）** | **◯ 完全動作** | **◯ 完全動作** | 形式 1〜5 および高水準デバイス操作ともに標準シリアル回線上で完全動作。 |
 | **MELSEC MCプロトコル（`TermAnalysis.MelcoMC`）** | **◯ 完全動作** | **◯ 完全動作** | QnA/Q/L/iQ-R/iQ-F 向け MCプロトコル 3E フレーム（TCP/UDP）ともに完全動作。 |
+| **OMRON FINS / Sysmac（`TermAnalysis.Omron`）** | **◯ 完全動作** | **◯ 完全動作** | FINS/UDP・FINS/TCP およびシリアル HostLink（FA / Cモード）ともに完全動作。 |
+| **KEYENCE KV 上位リンク（`TermAnalysis.Keyence`）** | **◯ 完全動作** | **◯ 完全動作** | Ethernet TCP/UDP（Port 8501）および RS-232C シリアル上位リンクともに完全動作。 |
 
 *   市販の USB-シリアル変換ケーブルを使用する場合は、ご使用の Windows OS（64bit / 32bit）に対応した仮想 COM ポート（VCP）ドライバーがデバイスマネージャー上で認識されていることを確認してください。
 *   実機のシリアル機器や変換ケーブルが手元にない環境で事前開発・デバッグを行う場合は、公式無償ツール **[c2c（仮想ヌルモデム＆通信モニター）](https://github.com/Monaca-App/c2c)** を起動することで、カーネルドライバの導入や管理者権限なしに仮想 COM ポートペア（例: `COM10` ⇔ `COM11`）を用いた折り返し通信テストおよびリアルタイム HEX / ASCII 電文監視を行えます。
@@ -224,7 +227,7 @@ ActiveX コントロールを保持できない非ブック形式（`.csv`, `.ts
 
 ## 📚 8. マクロコマンド・関連マニュアル一覧
 
-本アドインのシーケンス内で利用可能な Term 固有通信コマンド（5 ドメイン・49 コマンド）および全製品共通基盤コマンド（6 ドメイン・42 コマンド）のリファレンス案内です（総合計 91 コマンド）。
+本アドインのシーケンス内で利用可能な Term 固有通信コマンド（7 ドメイン・67 コマンド）および全製品共通基盤コマンド（6 ドメイン・42 コマンド）のリファレンス案内です（総合計 109 コマンド）。
 
 ### ① 画面操作マニュアル・マクロ総合ガイド・関連ツール
 *   [メイン画面取扱説明書 (`メイン画面取扱説明書.Md`)](./メイン画面取扱説明書.Md)
@@ -233,7 +236,7 @@ ActiveX コントロールを保持できない非ブック形式（`.csv`, `.ts
 *   [マクロスクリプト取扱説明書 (`マクロスクリプト取扱説明書.Md`)](./マクロスクリプト取扱説明書.Md)
 *   [c2c - ドライバ不要の仮想ヌルモデム＆通信モニター案内 (`README.md`)](https://github.com/Monaca-App/c2c)
 
-### ② Term 固有通信制御コマンド（全 5 ドメイン・49 コマンド）
+### ② Term 固有通信制御コマンド（全 7 ドメイン・67 コマンド）
 
 #### 1. COM ポート通信制御（`Comm`：全 6 コマンド）
 RS-232C / UART シリアルインターフェースを介した機器制御コマンド群です（[Comm エクステンション専用マニュアル](https://github.com/Monaca-App/TermAddIn_Comm)）。
@@ -258,6 +261,18 @@ Ethernet（TCP/UDP）経由の MCプロトコル 3E フレームによるシー�
 *   **回線制御・通信条件（3コマンド）**: [`Mc_Open`](./MelcoMC/Mc_Open.Md) / [`Mc_Close`](./MelcoMC/Mc_Close.Md) / [`Mc_Mode`](./MelcoMC/Mc_Mode.Md)
 *   **高水準デバイス操作（4コマンド）**: [`Mc_ReadWord`](./MelcoMC/Mc_ReadWord.Md) / [`Mc_WriteWord`](./MelcoMC/Mc_WriteWord.Md) / [`Mc_ReadBit`](./MelcoMC/Mc_ReadBit.Md) / [`Mc_WriteBit`](./MelcoMC/Mc_WriteBit.Md)
 *   **汎用電文送受信（2コマンド）**: [`Mc_Send`](./MelcoMC/Mc_Send.Md) / [`Mc_Receive`](./MelcoMC/Mc_Receive.Md)
+
+#### 6. オムロン FINS / Sysmac 通信制御（`Omron`：全 9 コマンド）
+FINS/UDP・FINS/TCP およびシリアル HostLink による SYSMAC シーケンサ通信コマンド群です（[Omron エクステンション専用マニュアル](https://github.com/Monaca-App/TermAddIn_Omron)）。
+*   **回線制御・経路設定（3コマンド）**: [`Fins_Open`](./Omron/Fins_Open.Md) / [`Fins_Close`](./Omron/Fins_Close.Md) / [`Fins_Mode`](./Omron/Fins_Mode.Md)
+*   **高水準デバイス操作（4コマンド）**: [`Fins_ReadWord`](./Omron/Fins_ReadWord.Md) / [`Fins_WriteWord`](./Omron/Fins_WriteWord.Md) / [`Fins_ReadBit`](./Omron/Fins_ReadBit.Md) / [`Fins_WriteBit`](./Omron/Fins_WriteBit.Md)
+*   **汎用電文送受信（2コマンド）**: [`Fins_Send`](./Omron/Fins_Send.Md) / [`Fins_Receive`](./Omron/Fins_Receive.Md)
+
+#### 7. キーエンス KV 上位リンク通信制御（`Keyence`：全 9 コマンド）
+Ethernet TCP/UDP（Port 8501）および RS-232C シリアル経由の KV 上位リンク通信コマンド群です（[Keyence エクステンション専用マニュアル](https://github.com/Monaca-App/TermAddIn_Keyence)）。
+*   **回線制御・条件設定（3コマンド）**: [`Kv_Open`](./Keyence/Kv_Open.Md) / [`Kv_Close`](./Keyence/Kv_Close.Md) / [`Kv_Mode`](./Keyence/Kv_Mode.Md)
+*   **高水準デバイス操作（4コマンド）**: [`Kv_ReadWord`](./Keyence/Kv_ReadWord.Md) / [`Kv_WriteWord`](./Keyence/Kv_WriteWord.Md) / [`Kv_ReadBit`](./Keyence/Kv_ReadBit.Md) / [`Kv_WriteBit`](./Keyence/Kv_WriteBit.Md)
+*   **汎用電文送受信（2コマンド）**: [`Kv_Send`](./Keyence/Kv_Send.Md) / [`Kv_Receive`](./Keyence/Kv_Receive.Md)
 
 ### ③ 共通基盤マクロコマンド（[全42コマンド共通基盤マニュアル目次](../README.md)）
 通信プロトコルやハードウェアの種類に依存しない、全製品共通の Excel シート順序制御・ミニシーケンス内部制御・パラメータ演算・配列操作・ファイル・ワーク処理コマンド群です。
