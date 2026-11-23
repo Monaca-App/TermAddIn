@@ -22,7 +22,7 @@
 
 | 引数位置 | 引数名 | 説明 | 指定方法 / 有効な入力値 |
 | :--- | :--- | :--- | :--- |
-| 引数1 | `Condition` | 比較条件演算子（必須）。<br/>・`GE` (`>=`): 以上<br/>・`GT` (`>`): より大きい<br/>・`LE` (`<=`): 以下<br/>・`LT` (`<`): 未満<br/>・`EQU` (`==`): 等しい（数値または文字列等価）<br/>・`NEQ` (`!=`): 等しくない | `"GE"`, `"GT"`, `"LE"`, `"LT"`, `"EQU"`, `"NEQ"`（記号表記 `">="`, `">"`, `"<="`, `"<"`, `"=="`, `"!="` も可） |
+| 引数1 | `Condition` | 比較条件演算子（必須）。<br/>・`GE` (`>=`, `GTE`): 以上<br/>・`GT` (`>`): より大きい<br/>・`LE` (`<=`, `LTE`): 以下<br/>・`LT` (`<`): 未満<br/>・`EQU` (`EQ`, `==`, `=`): 等しい（数値または文字列等価）<br/>・`NEQ` (`NE`, `!=`, `<>`): 等しくない | `"GE"`, `"GTE"`, `"GT"`, `"LE"`, `"LTE"`, `"LT"`, `"EQU"`, `"EQ"`, `"NEQ"`, `"NE"`（記号表記 `">="`, `">"`, `"<="`, `"<"`, `"=="`, `"="`, `"!="`, `"<>"` も可） |
 | 引数2 | `Val1` | 左辺の比較対象値（数値または文字列・必須）。 | 数値リテラル（`"5.0"`, `"0x1A"`）、文字列、または `$PARAMキー$` 置換 |
 | 引数3 | `Val2` | 右辺の比較基準値（数値または文字列・必須）。 | 数値リテラル、文字列、または `$PARAMキー$` 置換 |
 | 引数4 | `FalseJumpParamNo` | 条件不成立（偽 / NG）時の遷移先を保持するシート側公開パラメータ番号（任意・省略可）。 | `1` 以上の整数（`"1"`, `"2"`, ...）または省略（省略時は不成立時に `Halt` 停止） |
@@ -52,7 +52,7 @@
 COMMAND, "GPIB_VOLT_JUDGE", "MEAS_V"
 ,PARAM, "LOWER_V", Number, "下限電圧(V)", "4.80"
 ,PARAM, "UPPER_V", Number, "上限電圧(V)", "5.20"
-,PARAM, "NG_DEST", String, "NG時ジャンプ先", "NG_HANDLE"
+,PARAM, "NG_DEST", Text, "NG時ジャンプ先", "NG_HANDLE"
 ,PARAM, "MEAS_V", Work, "測定電圧値", ""
 ,SEQUENCE, 010, Gpib_Send, "MEAS:VOLT:DC?"
 ,SEQUENCE, 020, Gpib_Receive, "MEAS_V"
@@ -79,8 +79,8 @@ sequenceDiagram
     participant Cmd as "ExcelJudgeCommand"
     participant Sheet as "Excel シート (現在位置セル)"
 
-    Bridge->>Engine: ExecuteStepAsync(rowData)
-    Engine->>Cmd: Execute(Condition, Val1, Val2, FalseJumpParamNo)
+    Bridge->>Engine: ExecuteStepAsync(rowData, cancellationToken)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
     Cmd->>Cmd: 基数自動認識数値比較 または 文字列等価評価
     alt 条件成立 (True / OK)
@@ -126,7 +126,8 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 数値比較成立（`"GE", "5.0", "4.8", "3"`） | `Flow = Next` が返る | 条件成立時の継続進行検証 |
-| **2** | 正常系 | 数値比較不成立・分岐あり（`"LE", "5.5", "5.2", "3"`） | `Flow = Jump` かつ `TargetParamNumber = 3` が返る | 条件不成立時のパラメータ番号分岐検証 |
-| **3** | 正常系 | 16 進数・文字列比較（`"EQU", "0x10", "16"` / `"EQU", "ok", "OK"`） | `Flow = Next` が返る | 基数自動認識および大文字小文字無視比較の検証 |
-| **4** | 異常系 | 不成立かつ分岐省略（`"GT", "1.0", "2.0"`）または非数値大小比較 | `Flow = Halt` が返る | 分岐省略時および不正入力時の安全停止検証 |
+| **1** | 正常系 | 数値比較成立・`$PARAM$` 展開 `("GE", "$MEAS_V$", "$MIN_V$", "3")`（`5.00 >= 4.80`） | `Flow = Next` かつ `Status = Success` が返る | 条件成立時の継続進行および `$PARAM$` 展開の検証 |
+| **2** | 正常系 | 数値比較不成立・分岐あり `("LE", "5.50", "5.20", "3")` | `Flow = Jump` かつ `TargetParamNumber = 3` が返る | 条件不成立時の公開パラメータ番号分岐検証 |
+| **3** | 異常系 | 文字列比較不成立・分岐省略 `("EQU", "READY", "BUSY")` | 警告ログが出力され `Flow = Halt` が返る | 分岐省略時の規格外停止検証 |
+| **4** | 異常系 | 不正なジャンプ先パラメータ番号指定 `("GE", "5.0", "4.0", "0")` | エラーログが出力され `Flow = Halt` が返る | `0` 以下のパラメータ番号に対する防御検証 |
+| **5** | 異常系 | 非数値文字列に対する大小比較 `("GT", "ERR_STR", "10")` | エラーログが出力され `Flow = Halt` が返る | 非数値大小比較時の安全停止検証 |

@@ -1,0 +1,54 @@
+; ==============================================================================
+; Common.Core.Commands Sample: Excel ドメイン (全8コマンド網羅)
+; 対象: Excel_Loop / Excel_Next / Excel_Wait / Excel_Judge / Excel_Jump
+;       Excel_Break / Excel_Msg_Box / Excel_Exit
+; ==============================================================================
+TITLE, "Core Excel シート順序制御サンプル"
+
+COMMAND, "EX_LOOP_START"
+,PARAM, LOOP_CNT, Text, "反復回数", "3"
+,PARAM, EXIT_TARGET, Text, "脱出先セル", ""
+,SEQUENCE, 10, Excel_Loop, "$LOOP_CNT$", "2"
+,SEQUENCE, 20, Exit
+
+COMMAND, "EX_WAIT"
+,PARAM, WAIT_MS, Text, "待機時間(ms)", "300"
+,SEQUENCE, 10, Excel_Wait, "$WAIT_MS$"
+,SEQUENCE, 20, Exit
+
+COMMAND, "EX_JUDGE"
+,PARAM, COND, List, "比較条件", "GTE", "EQU", "NEQ", "GT", "LT", "LTE"
+,PARAM, VAL1, Text, "比較値1", "10"
+,PARAM, VAL2, Text, "比較値2", "5"
+,PARAM, FALSE_TARGET, Text, "不成立時ジャンプ先", ""
+,SEQUENCE, 10, Excel_Judge, "$COND$", "$VAL1$", "$VAL2$", "4"
+,SEQUENCE, 20, Exit
+
+COMMAND, "EX_LOOP_NEXT"
+,SEQUENCE, 10, Excel_Next
+,SEQUENCE, 20, Exit
+
+COMMAND, "EX_MSGBOX", "RESULT_DATA"
+,PARAM, MSG_TEXT, Text, "確認メッセージ", "ループが完了しました。終了ステップへ進みますか？"
+,PARAM, TITLE_TEXT, Text, "タイトル", "Core Excel サンプル"
+,PARAM, BTN_TYPE, List, "ボタン種別", "OKCancel", "YesNo", "OK"
+,PARAM, CANCEL_TARGET, Text, "キャンセル時ジャンプ先", ""
+,PARAM, RESULT_DATA, Text, "選択結果", ""
+,SEQUENCE, 10, Excel_Msg_Box, "$MSG_TEXT$", "$TITLE_TEXT$", "$BTN_TYPE$", "RESULT_DATA", "4"
+,SEQUENCE, 20, Exit
+
+COMMAND, "EX_JUMP"
+,PARAM, JUMP_TARGET, Text, "ジャンプ先セル", ""
+,SEQUENCE, 10, Excel_Jump, "1"
+,SEQUENCE, 20, Exit
+
+COMMAND, "EX_BREAK"
+,PARAM, BREAK_TARGET, Text, "脱出先セル", ""
+,SEQUENCE, 10, Excel_Break, "1"
+,SEQUENCE, 20, Exit
+
+COMMAND, "EX_EXIT"
+,PARAM, END_MSG, Text, "終了メッセージ", "完了"
+,PARAM, ERR_CODE, Text, "終了コード", "0"
+,SEQUENCE, 10, Excel_Exit, "$END_MSG$", "$ERR_CODE$"
+,SEQUENCE, 20, Exit

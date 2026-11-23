@@ -25,8 +25,8 @@
 | 引数1 | TargetKey | 取得元の 2 次元テーブルを保持するパラメータキー名（必須）。 | 自コマンド内の `PARAM` キー名（例: `"DATA_TABLE"`, `"1"`） |
 | 引数2 | XIndex | 取得する列インデックス（0 始まり）、または行全体取得を示す `-1`（必須）。 | `0` 以上の整数（単一セル取得）または `"-1"`（行全体取得） |
 | 引数3 | YIndex | 取得する行インデックス（0 始まり・必須）。 | `0` 以上の整数（例: `"0"`, `"1"`）または `$PARAM$` 置換 |
-| 引数4 | Delimiter | 列区切りデリミタ文字列（`<XIndex> = -1` の場合は省略可・既定値: `","`）。 | `","`（カンマ）、`"\t"`（タブ）等 |
-| 引数5 | DstVar | 抽出した文字列を格納する対象パラメータキー名（必須）。 | 自コマンド内の `PARAM` キー名（例: `"CELL_VAL"`, `"ROW_TEXT"`） |
+| 引数4 | `Delimiter` | 列区切りデリミタ文字列（任意・4 引数書式時は `<XIndex>` の値に関わらず省略扱いで既定値: `","` が適用されます）。 | 5 引数書式時は `","`（カンマ）、`"\t"`（タブ）等。4 引数書式時はこの位置に格納先 `DstVar` を指定 |
+| 引数5 | `DstVar` | 抽出した文字列を格納する対象パラメータキー名（必須：4 引数書式時は第 4 引数位置に指定）。 | 自コマンド内の `PARAM` キー名（例: `"CELL_VAL"`, `"ROW_TEXT"`） |
 
 ---
 
@@ -36,8 +36,8 @@
 * **動的置換（`$`）**: 引数内で `$PARAMキー$` のように記述すると、実行時に変数プール（PARAM）の値へ動的置換されます。（適用可能な引数: 全引数対応）
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
-* **カンマのエスケープ**: 引数 4 にカンマを指定する場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `ArrayGet`, `Array_Line`, `ArrayLine`, `Analysis_Term_Array_Line`
+* **カンマのエスケープ**: 5 引数書式で引数 4 にカンマを指定する場合は、必ず `","` と二重引用符で囲んで記述します。
+* **エイリアス（別名）**: `Array_Line`, `Gpib_Array_Get`, `Gpib_Array_Line`, `Term_Array_Get`, `Analysis_Term_Array_Get`, `Term_Array_Line`, `Analysis_Term_Array_Line`
 
 ---
 
@@ -74,26 +74,26 @@ sequenceDiagram
     autonumber
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "Array_GetCommand"
-    participant Target as "TargetResolver / パラメータ辞書"
+    participant Target as "TargetResolver (ITargetBuffer)"
     participant Buffer as "TableBuffer (2次元テーブル処理)"
 
-    Engine->>Cmd: ExecuteAsync(TargetKey, XIndex, YIndex, Delimiter, DstVar)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
-    Cmd->>Target: GetTargetValue(TargetKey)
-    Target-->>Cmd: テーブル文字列
-    alt XIndex >= 0 かつ YIndex >= 0 (単一セル取得モード)
-        Cmd->>Buffer: GetCellSafe(XIndex, YIndex, Delimiter)
-        Buffer-->>Cmd: セル文字列 (範囲外時は "")
-        Cmd->>Target: SetTargetValue(DstVar, CellText)
-        Cmd-->>Engine: 実行完了 (Success)
-    else XIndex == -1 かつ YIndex >= 0 (行全体取得モード: 旧 Array_Line)
-        Cmd->>Buffer: GetRowLineSafe(YIndex)
-        Buffer-->>Cmd: 行全体文字列 (範囲外時は "")
-        Cmd->>Target: SetTargetValue(DstVar, RowText)
-        Cmd-->>Engine: 実行完了 (Success)
-    else XIndex < -1 または YIndex < 0 (不正座標)
+    Cmd->>Target: TryResolve(TargetKey, out sourceBuffer) ＆ TryResolve(DstVar, out dstBuffer)
+    Cmd->>Target: TryResolveAndParseInt(XIndex, YIndex) ＆ TryExpandMacroTokens(Delimiter)
+    alt バッファ解決成功 かつ XIndex >= 0 かつ YIndex >= 0 (単一セル取得モード)
+        Cmd->>Buffer: GetCellOrLineSafe(sourceBuffer.Value, XIndex, YIndex, Delimiter)
+        Buffer-->>Cmd: セル文字列 extracted (範囲外時は "")
+        Cmd->>Target: dstBuffer.Value = extracted
+        Cmd-->>Engine: AnalysisResult.Success(extracted)
+    else バッファ解決成功 かつ XIndex == -1 かつ YIndex >= 0 (行全体取得モード: 旧 Array_Line)
+        Cmd->>Buffer: GetCellOrLineSafe(sourceBuffer.Value, -1, YIndex, Delimiter)
+        Buffer-->>Cmd: 行全体文字列 extracted (範囲外時は "")
+        Cmd->>Target: dstBuffer.Value = extracted
+        Cmd-->>Engine: AnalysisResult.Success(extracted)
+    else XIndex < -1 または YIndex < 0 または 未定義キー
         Cmd->>Cmd: エラーログ出力 (_log.LogError)
-        Cmd-->>Engine: 実行失敗・即時中断 (Halt)
+        Cmd-->>Engine: AnalysisResult.Halt(errMsg, errorCode)
     end
     deactivate Cmd
 ```
@@ -127,6 +127,7 @@ sequenceDiagram
 | :---: | :--- | :--- | :--- | :--- |
 | **1** | 正常系 | 単一セル取得（`X=1, Y=0`） | 0行目・1列目のセル文字列が `<DstVar>` に格納される | セル値抽出の基本動作検証 |
 | **2** | 正常系 | 行全体取得（`X=-1, Y=1`） | 1行目の行テキスト全体が `<DstVar>` に格納される | 旧 `Array_Line` 統合機能の検証 |
-| **3** | 正常系 | 範囲外座標指定（`X=99, Y=99`） | 例外を投げず `<DstVar>` に空文字 `""` が格納される | 範囲外アクセス時の安全空文字返却検証 |
-| **4** | 異常系 | 不正負数指定（`X=-2, Y=-1`） | エラーログが出力され `Failure` で安全停止する | 不正負数インデックスガードの検証 |
+| **3** | 正常系 | デリミタ省略 4 引数書式での取得（`"DATA_TABLE", "-1", "0", "LINE_OUT"`） | 既定区切り `","` として 0 行目全体が `<DstVar>` に格納される | 4 引数省略書式の動作検証 |
+| **4** | 正常系 | 範囲外座標指定（`X=99, Y=99`） | 例外を投げず `<DstVar>` に空文字 `""` が格納される | 範囲外アクセス時の安全空文字返却検証 |
+| **5** | 異常系 | 不正負数指定（`X=-2, Y=0`） | エラーログが出力され `Halt` で安全停止する | 不正負数インデックスガードの検証 |
 

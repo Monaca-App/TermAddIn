@@ -33,7 +33,7 @@
 * **ジャンプ先指定（`#`）**: ジャンプ先となるステップキーを `#ラベル名#` のように `#` で囲んで指定します（内部の `FormatSeqKey` により前後の `#` 有無は正規化照合されます）。（適用可能な引数: 引数 1 `TargetLabel`）
 * **共通コマンド指定（`@`）**: 本コマンドは同一コマンド内の行遷移を行うため `@` は適用されません（別コマンドの呼出には [`Call`](../Param/Call.Md) を使用します）。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: 引数文字列自体にカンマを含める場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `Goto`, `GpibJump`, `Analysis_Term_Jump`
+* **エイリアス（別名）**: `Goto`, `Gpib_Jump`, `Term_Jump`, `Analysis_Term_Jump`
 
 ---
 
@@ -81,11 +81,11 @@ sequenceDiagram
     activate Steps
     alt 対象ラベルが存在する場合
         Steps-->>Cmd: TargetStepIndex (>= 0)
-        Cmd-->>Engine: ジャンプ遷移指示 (NextStep = TargetLabel)
+        Cmd-->>Engine: ジャンプ遷移指示 (Jump -> TargetLabel)
     else 未定義ラベルの場合
         Steps-->>Cmd: NotFound (-1)
         Cmd->>Cmd: エラーログ出力 (_log.LogError)
-        Cmd-->>Engine: 実行失敗・即時中断 (Halt)
+        Cmd-->>Engine: 実行失敗・即時中断 (Halt: -14)
     end
     deactivate Steps
     deactivate Cmd
@@ -118,7 +118,7 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 定義済みラベル指定（`"#FINISH#"`） | `JumpTarget = "#FINISH#"` を持つ `Success` 結果が返る | 無条件ジャンプの基本動作検証 |
-| **2** | 正常系 | `#` 省略表記（`"FINISH"`） | `FormatSeqKey` により `"#FINISH#"` に正規化されて一致解決される | ラベル表記揺れ正規化の検証 |
-| **3** | 異常系 | 存在しないラベル指定（`"#NO_SUCH_STEP#"`） | エラーログが出力され `Failure` で安全停止する | 未定義ジャンプ先の防御検証 |
+| **1** | 正常系 | 定義済みラベル指定（`"#FINISH#"`） | `Status == Jump`（`TargetLabel == "#FINISH#"`, `NextStepOverride == 30`）が返る | 無条件ジャンプの基本動作検証 |
+| **2** | 正常系 | `#` 省略表記（`"FINISH"`）および `$PARAM$` 置換（`"$TARGET_LBL$"` ➔ `"#RETRY#"`） | `FormatSeqKey` 正規化およびマクロ展開により `Status == Jump` で一致解決される | ラベル表記揺れ正規化および動的置換の検証 |
+| **3** | 異常系 | 存在しないラベル指定（`"#NO_SUCH_STEP#"`） | エラーログが出力され `Status == Halt` で安全停止する | 未定義ジャンプ先の防御検証 |
 

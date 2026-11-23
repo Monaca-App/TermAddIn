@@ -67,8 +67,8 @@ sequenceDiagram
     participant Cmd as "ExcelNextCommand"
     participant Stack as "シート単位ループスタック"
 
-    Bridge->>Engine: ExecuteStepAsync(rowData)
-    Engine->>Cmd: Execute()
+    Bridge->>Engine: ExecuteStepAsync(rowData, cancellationToken)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
     Cmd-->>Engine: AnalysisResult.ExcelLoopNext()
     deactivate Cmd
@@ -111,5 +111,5 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 引数なしで実行 | `Flow = LoopNext` を持つ成功結果が返る | ループ折り返し識別子返却の基本検証 |
-| **2** | 異常系 | 対応する `Excel_Loop` なし（スタック空）または余剰引数指定時 | ブリッジ層で `Flow = Halt` 安全停止または検証拒否となる | ループ構造不整合に対する安全防護検証 |
+| **1** | 正常系 | 引数なし `()` で実行 | `Flow = LoopNext` かつ `Status = Success` が返る | ループ折り返し識別子返却の基本検証 |
+| **2** | 異常系 | 余剰引数 `("EXTRA_INVALID")` を指定して実行 | エラーログが出力され `Flow = Halt`（エラーコード `-10`）で安全停止する | 不要引数指定時の安全停止ガード検証 |

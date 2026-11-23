@@ -3,10 +3,10 @@
 ## 概要
 
 `Wait` は、指定されたミリ秒間（`<WaitMilliseconds>`）、UI スレッドをブロックせずに非同期タイマー待機（`Task.Delay`）を実行する共通シーケンス・フロー制御系コマンドです。  
-機器の応答安定待ちやリレー整定時間待機などに使用され、旧 Term の `WaitTime`（`Analysis_Term_WaitTime`）および旧 GPIB Work の `GpibWait`（ミリ秒スリープ）を共通基盤へ完全統合しています。
+機器の応答安定待ちやリレー整定時間待機などに使用され、旧 Term の `Term_WaitTime`（ミリ秒スリープ）等を共通基盤へ統合しています。
 
 > 💡 **補足**  
-> 本コマンドは 共通基盤コマンドです。なお、GPIB バス上の SRQ イベント発生を待機する場合は、本コマンドではなく GPIB 専用コマンドの [`Gpib_Wait`](https://github.com/Monaca-App/GpibAddIn/tree/main/Manual/GPIB/Gpib_Wait.Md) を使用します。
+> 本コマンドは共通基盤コマンドです。なお、目標日時・時刻または秒数指定待機には [`WaitTime`](./WaitTime.Md)（別名 `Analysis_Term_WaitTime` 等）、`Delay` 別名によるミリ秒待機には [`WaitMs`](./WaitMs.Md)、GPIB バス上の SRQ イベント待機には GPIB 専用コマンドの [`Gpib_Wait`](https://github.com/Monaca-App/GpibAddIn/tree/main/Manual/GPIB/Gpib_Wait.Md) を使用します。
 
 ---
 
@@ -33,7 +33,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: 引数文字列自体にカンマを含める場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `WaitTime`, `Analysis_Term_WaitTime`, `Sleep`, `Delay`
+* **エイリアス（別名）**: `Sleep`, `Term_WaitTime`
 
 ---
 
@@ -74,7 +74,7 @@ sequenceDiagram
 
     Engine->>Cmd: ExecuteAsync(WaitMilliseconds, CancellationToken)
     activate Cmd
-    Cmd->>Cmd: 基数自動認識パース & 非負整数検証 (>= 0)
+    Cmd->>Cmd: 基数自動認識パース ＆ 非負整数検証 (>= 0)
     alt WaitMilliseconds >= 0
         Cmd->>Timer: Task.Delay(WaitMilliseconds, CancellationToken)
         activate Timer
@@ -120,7 +120,7 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 短時間待機（`"50"` ミリ秒） | 約 50 ms 経過後に `Success` が返却される | 非同期タイマー待機の基本動作検証 |
-| **2** | 正常系 | 待機中キャンセルトークン発火（`"5000"` ms 待機中に Cancel） | 5000 ms 待たずに即座にキャンセル終了する | キャンセル応答性の検証 |
-| **3** | 異常系 | 負の待機時間指定（`"-10"`） | エラーログが出力され `Failure` で安全停止する | 不正待機時間ガードの検証 |
+| **1** | 正常系 | 短時間待機（`"$SETTLE_MS$"` ➔ `"30"` ミリ秒） | 約 30 ms 経過後に `Status == Success` が返却される | `$PARAM$` 置換および非同期タイマー待機の検証 |
+| **2** | 正常系 | 待機中キャンセルトークン発火（`"5000"` ms 待機中に 40 ms で Cancel） | `OperationCanceledException` により 5000 ms 待たずに即座に中断する | キャンセル即時応答性の検証 |
+| **3** | 異常系 | 負の待機時間指定（`"-10"`） | エラーログが出力され `Status == Halt` で安全停止する | 不正待機時間ガードの検証 |
 

@@ -48,7 +48,7 @@
 COMMAND, "VALIDATE_LIMIT", ""
 ,PARAM, "VOLT", Number, "測定電圧(V)", "15.5"
 ,SEQUENCE, 010, OnError, #ERROR_CLEANUP#
-,SEQUENCE, 020, Judge, LE, "$VOLT$", 12.0, #NORMAL_END#
+,SEQUENCE, 020, Judge, GT, "$VOLT$", 12.0, #NORMAL_END#
 ,SEQUENCE, 030, SetError, -99, "過電圧異常を検出しました"
 ,SEQUENCE, #ERROR_CLEANUP#, ClearError
 ,SEQUENCE, #NORMAL_END#, Exit
@@ -57,7 +57,7 @@ COMMAND, "VALIDATE_LIMIT", ""
 ### 実行時の挙動・変数変化
 
 * **実行前の状態**: `"VOLT"` が `"15.5"` であり、ステップ `010` で `$ON_ERROR_HANDLER$` に `"#ERROR_CLEANUP#"` が登録されている状態。
-* **実行後の状態**: ステップ `030` で `$ERROR_CODE$` に `"-99"`、`$ERROR_MESSAGE$` に `"過電圧異常を検出しました"` が格納され、ハンドラ `#ERROR_CLEANUP#` へ即座にジャンプします。
+* **実行後の状態**: ステップ `020` の `Judge` で `15.5 > 12.0`（`GT` 条件成立）と判定されて次行 `030` の `SetError` へ進み、`$ERROR_CODE$` に `"-99"`、`$ERROR_MESSAGE$` に `"過電圧異常を検出しました"` が格納されてハンドラ `#ERROR_CLEANUP#` へ即座にジャンプします。その後、`#ERROR_CLEANUP#` の `ClearError` により `$ERROR_CODE$` が `"0"`、`$ERROR_MESSAGE$` が `""` にリセットされ、次行 `#NORMAL_END#` の `Exit` を経て終了します（なお測定電圧が `12.0` 以下の場合はステップ `020` が条件不成立となり `#NORMAL_END#` へ直行します）。
 
 ---
 
@@ -115,6 +115,6 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 異常系 | ハンドラ未設定状態で `("-99", "TestError")` を実行 | `Status == Failed` かつ `ErrorCode == -99` を返却 | ハンドラ未設定時の安全停止動作検証 |
+| **1** | 異常系 | ハンドラ未設定状態で `("-99", "致命的障害")` を実行 | `Status == Failed` かつ `ErrorCode == -99` を返却 | ハンドラ未設定時の安全停止動作検証 |
 | **2** | 正常系 | `$ON_ERROR_HANDLER$ = "500"` 設定後に同引数を実行 | `Status == Jump` かつ `NextStepOverride == 500` を返却 | エラートラップハンドラへの自動ジャンプ検証 |
 

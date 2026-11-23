@@ -22,10 +22,10 @@
 
 | 引数位置 | 引数名 | 説明 | 指定方法 / 有効な入力値 |
 | :--- | :--- | :--- | :--- |
-| 引数1 | FilePath | 保存先ファイルのパス（必須）。 | 相対パス（例: `"./output/result.csv"`）または `$PARAM$` 置換 |
-| 引数2 | Source | 書き込む文字列データまたは取得元パラメータキー名（必須）。 | パラメータキー名（`"DATA_TABLE"`）、`$PARAM$` 置換、または文字列リテラル |
-| 引数3 | Mode | 書き込みモード（任意・省略可・既定値: `"Overwrite"`）。 | `"Overwrite"`（上書き保存）または `"Append"`（末尾追記） |
-| 引数4 | Encoding | 保存時の文字エンコーディング名（任意・省略可・既定値: `"UTF-8"`）。 | `"UTF-8"`, `"Shift_JIS"`（または `"CP932"`）, `"ASCII"` |
+| 引数1 | `FilePath` | 保存先ファイルのパス（必須）。 | 相対パス（例: `"./output/result.csv"`）または `$PARAM$` 置換 |
+| 引数2 | `Source` | 書き込む文字列データまたは取得元パラメータキー名（必須）。 | パラメータキー名（`"DATA_TABLE"`）、`$PARAM$` 置換、または文字列リテラル |
+| 引数3 | `Mode` | 書き込みモード（任意・省略可・既定値: `"Overwrite"`）。 | ・上書き保存: `"Overwrite"`, `"CREATE"`, `"WRITE"`, `"FALSE"`, `"0"`<br/>・末尾追記: `"Append"`, `"ADD"`, `"TRUE"`, `"1"` |
+| 引数4 | `Encoding` | 保存時の文字エンコーディング名（任意・省略可・既定値: **`"SJIS"`** ［Shift_JIS / CP932］）。 | `"SJIS"`（`"Shift_JIS"` / `"CP932"`）, `"UTF-8"`, `"UTF8BOM"`, `"ASCII"` 等または `$PARAM$` 置換 |
 
 ---
 
@@ -36,7 +36,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: `<Source>` の文字列自体にカンマを含める場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `WriteFile`, `GpibWriteFile`, `Analysis_Term_WriteFile`
+* **エイリアス（別名）**: `FileWrite`, `Gpib_WriteFile`, `Term_WriteFile`, `Analysis_Term_WriteFile`
 
 ---
 
@@ -49,14 +49,21 @@
 ```csv
 COMMAND, "SAVE_REPORT_CSV", "OUT_PATH"
 ,PARAM, "OUT_PATH", Text, "出力ファイルパス", "./log/meas_report.csv"
-,PARAM, "REPORT_TBL", Text, "出力テーブルデータ", "No,Voltage,Result\r\n1,5.002,PASS"
-; REPORT_TBL の内容を UTF-8 で ./log/meas_report.csv に上書き保存
-,SEQUENCE, 010, Write_File, "$OUT_PATH$", "REPORT_TBL", "Overwrite", "UTF-8"
+,PARAM, "REPORT_TBL", Work, "出力テーブルデータ", ""
+; 1. 2行のCSVテーブルデータ ("No,Voltage,Result\r\n1,5.002,PASS") を構築
+,SEQUENCE, 010, Array_Set, "REPORT_TBL", 0, 0, ",", "No"
+,SEQUENCE, 020, Array_Set, "REPORT_TBL", 1, 0, ",", "Voltage"
+,SEQUENCE, 030, Array_Set, "REPORT_TBL", 2, 0, ",", "Result"
+,SEQUENCE, 040, Array_Set, "REPORT_TBL", 0, 1, ",", "1"
+,SEQUENCE, 050, Array_Set, "REPORT_TBL", 1, 1, ",", "5.002"
+,SEQUENCE, 060, Array_Set, "REPORT_TBL", 2, 1, ",", "PASS"
+; 2. REPORT_TBL の内容を UTF-8 で ./log/meas_report.csv に上書き保存
+,SEQUENCE, 070, Write_File, "$OUT_PATH$", "REPORT_TBL", "Overwrite", "UTF-8"
 ```
 
 ### 実行時の挙動・変数変化
 
-* **実行前の状態**: `"REPORT_TBL"` に `"No,Voltage,Result\r\n1,5.002,PASS"` が格納されている状態。
+* **実行前の状態**: ステップ `010`〜`060` により `"REPORT_TBL"` に `"No,Voltage,Result\r\n1,5.002,PASS"` が構築されている状態。
 * **実行後の状態**: 設定ファイル配置ディレクトリ基準の `./log/meas_report.csv` が作成（既存時は上書き）され、`"REPORT_TBL"` の全文が UTF-8 で書き込まれます。
 
 ---
@@ -71,26 +78,23 @@ sequenceDiagram
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "Write_FileCommand"
     participant Resolver as "FilePathResolver"
-    participant Target as "TargetResolver / パラメータ辞書"
-    participant FS as "OS ファイルシステム"
+    participant Target as "TargetResolver (ResolveSourceContent)"
+    participant FS as "FileStream / StreamWriter"
 
-    Engine->>Cmd: ExecuteAsync(FilePath, Source, Mode, Encoding)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
-    Cmd->>Resolver: ResolveRelativePath(FilePath)
-    Resolver-->>Cmd: 解決済みフルパス (ResolvedPath)
-    Cmd->>Target: Source の文字列解決 (キー参照またはリテラル)
-    Target-->>Cmd: 書込対象文字列 (Content)
-    Cmd->>FS: 親ディレクトリ自動作成 & ファイル書込 (Overwrite / Append)
-    activate FS
-    alt 書込成功
-        FS-->>Cmd: I/O 完了
-        Cmd-->>Engine: 実行完了 (Success)
-    else ディスクフル または アクセス権・ロックエラー
-        FS-->>Cmd: IOException / UnauthorizedAccessException
-        Cmd->>Cmd: エラーログ出力 (_log.LogError)
-        Cmd-->>Engine: 実行失敗・安全停止 (Halt)
+    Cmd->>Resolver: TryResolvePath(FilePath) ＆ TryResolveEncoding(Encoding)
+    Cmd->>Target: ResolveSourceContent(Source) (TryResolve / TryExpandMacroTokens)
+    alt パス・書込文字列・Mode・文字コード解決成功
+        Cmd->>FS: 親ディレクトリ自動作成 ＋ FileStream(Create/Append) ＋ StreamWriter.WriteAsync()
+        activate FS
+        FS-->>Cmd: FlushAsync() 完了
+        deactivate FS
+        Cmd-->>Engine: AnalysisResult.Success(...)
+    else パス・モード不正 または IOException / UnauthorizedAccessException
+        Cmd->>Cmd: エラーログ出力 (_log.LogError / _log.LogCritical)
+        Cmd-->>Engine: AnalysisResult.Halt(errMsg, errorCode)
     end
-    deactivate FS
     deactivate Cmd
 ```
 
@@ -123,5 +127,5 @@ sequenceDiagram
 | :---: | :--- | :--- | :--- | :--- |
 | **1** | 正常系 | 上書きモードでのファイル出力（`"Overwrite"`） | 指定内容でファイルが生成され、テスト終了時（`finally`）に自動削除される | 上書き保存の基本動作および一時ファイルクリーンアップの検証 |
 | **2** | 正常系 | 追記モードでのファイル出力（`"Append"`） | 既存内容の末尾にデータが付加される | 追記モード動作の検証 |
-| **3** | 異常系 | 不正なパス文字を含むファイルパス指定 | エラーログが出力され `Failure` で安全停止する | パス検証・I/O 例外防御の検証 |
+| **3** | 異常系 | 不正なパス文字を含むファイルパス指定 | エラーログが出力され `Halt` で安全停止する | パス検証・I/O 例外防御の検証 |
 

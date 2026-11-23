@@ -2,7 +2,7 @@
 
 ## 概要
 
-`Next` は、[`Loop`](./Loop.Md) コマンドで開始されたループブロックの終端を示し、ループカウンタの加算更新と継続／満了判定を行う共通パラメータ・呼出・ループ制御系コマンドです。  
+`Next` は、[`Loop`](./Loop.Md) コマンドで開始されたループブロックの終端を示し、ループカウンタの加算更新と継続／満了判定を行う共通シーケンス・ループ制御系コマンド（`Common.Commands.Sequence.dll`）です。  
 現在の反復回数が最大回数未満（`CurrentCount < MaxCount`）の場合はカウンタを `+1` 更新してループ開始行の直後へジャンプ復帰し、最大回数に到達（`CurrentCount >= MaxCount`）した場合はループスタックからフレームを Pop 解放して次行へ進みます。
 
 > 💡 **補足**  
@@ -29,11 +29,11 @@
 ## 🔄 特殊置換規約・分岐規約の適用
 
 本コマンドの引数における特殊記法および解釈ルールです。
-* **動的置換（`$`）**: 引数にはパラメータキー名そのものを指定しますが、`$PARAM$` 置換も解釈されます。（適用可能な引数: 引数 1 `IndexVariable`）
-* **ジャンプ先指定（`#`）**: 復帰先はループスタック（`LoopFrame.StartStepKey`）から自動解決されるため、`#` による指定は不要です。（適用可能な引数: 非適用）
+* **動的置換（`$`）**: 引数にはカウンタ変数キー名（`"IDX"` または `"$IDX$"` 形式、前後の `$` は `CleanParamKey` で正規化比較）を指定します。（適用可能な引数: 引数 1 `IndexVariable`）
+* **ジャンプ先指定（`#`）**: 復帰先はループスタック（`LoopFrame.StartLabel`）から自動解決されるため、`#` による指定は不要です。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: 引数文字列自体にカンマを含める場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `EndLoop`
+* **エイリアス（別名）**: `EndLoop`, `Gpib_Next`, `Analysis_Term_Next`
 
 ---
 
@@ -76,28 +76,31 @@ sequenceDiagram
     autonumber
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "NextCommand"
-    participant Stack as "LoopStack (Stack<LoopFrame>)"
+    participant Stack as "LoopStack (Stack(LoopFrame))"
     participant Param as "コマンドパラメータ辞書"
 
     Engine->>Cmd: ExecuteAsync(IndexVariable)
     activate Cmd
     Cmd->>Stack: PeekLoopFrame()
     activate Stack
-    alt スタック最上位フレームが存在 かつ CurrentCount < MaxCount (継続)
+    alt スタックが空の場合 (ループ外実行)
+        Stack-->>Cmd: null
+        Cmd-->>Engine: 次ステップへ安全に進行 (Success)
+    else カウンタ変数名不一致 (IndexVariable != frame.IndexVariableName)
+        Stack-->>Cmd: LoopFrame (変数名不一致)
+        Cmd->>Cmd: エラーログ出力 (_log.LogError)
+        Cmd-->>Engine: 実行失敗・即時中断 (Halt: -14)
+    else CurrentCount < MaxCount (反復継続)
         Stack-->>Cmd: LoopFrame (継続可能)
         Cmd->>Stack: CurrentCount を +1 更新
         opt IndexVariable 設定あり
             Cmd->>Param: SetParam(IndexVariable, CurrentCount.ToString())
         end
-        Cmd-->>Engine: ループ開始直後へジャンプ復帰 (Target: StartStepKey)
+        Cmd-->>Engine: ループ開始直後へジャンプ復帰 (Target: StartLabel)
     else CurrentCount >= MaxCount (ループ満了)
         Stack-->>Cmd: LoopFrame (満了)
         Cmd->>Stack: PopLoopFrame()
         Cmd-->>Engine: ループ終了・次ステップへ進行 (Success)
-    else スタックが空 または 変数名不一致
-        Stack-->>Cmd: Empty / Mismatch
-        Cmd->>Cmd: 警告/エラーログ記録
-        Cmd-->>Engine: 安全に次ステップへ進行または停止
     end
     deactivate Stack
     deactivate Cmd
@@ -110,7 +113,7 @@ sequenceDiagram
 入力データの異常や実行時エラーに対し、解析・実行エンジンが実行するセーフティ規約です。
 
 1. **対応する `Loop` が存在しない状態（ループスタック空）での `Next` 実行**:
-   - スタックアンダーフロー例外を発生させず、警告ログを出力した上で安全に次ステップへ進行します（パース時の静的 Lint でも不整合を事前検出します）。
+   - スタックアンダーフロー例外や警告・エラーログを発生させず、`AnalysisResult.Success` を返却して安全に次ステップへ進行します（なお、パース時の静的 Lint では `LINT007` エラーとして不整合を事前検出します）。
 2. **ネスト順序の交差（外側の `IndexVariable` を内側の `Next` で指定した場合）**:
    - スタック最上位フレームの `IndexVariable` と一致しない指定を検出した場合、構文不整合エラーとしてログを記録し安全停止します。
 
@@ -130,7 +133,7 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | `CurrentCount = 1, MaxCount = 3` の状態で `Next` 実行 | `CurrentCount` が `2` に更新され、ループ開始位置へのジャンプ指示が返る | ループ継続時のカウンタ加算とジャンプ復帰の検証 |
-| **2** | 正常系 | `CurrentCount = 3, MaxCount = 3`（最終回）の状態で `Next` 実行 | `LoopFrame` が Pop 解放され、次行への通常進行が返る | ループ満了時のスタック解放と脱出の検証 |
-| **3** | 異常系 | ループスタックが空の状態で `Next` 実行 | 例外クラッシュせず安全に処理が完了する | スタック空時のセーフティガード検証 |
+| **1** | 正常系 | `LoopFrame("#20#", MaxCount=2, "$IDX$")` の 1 回目で `Next` 実行 | `CurrentCount` および `"$IDX$"` が `"2"` に更新され、`"#20#"` へ `Jump` する | ループ継続時のカウンタ加算とジャンプ復帰の検証 |
+| **2** | 異常系 | 不一致なカウンタ変数名 `("$OTHER_VAR$")` を指定して実行 | エラーログが出力され `AnalysisResultStatus.Halt`（`-14`）で即時停止する | ネスト交差・変数名不整合に対する防御検証 |
+| **3** | 正常系 | `CurrentCount == MaxCount`（2 回目最終回）の状態で `Next` 実行 | `LoopFrame` が Pop 解放され、`AnalysisResultStatus.Success`（次行進行）が返る | ループ満了時のスタック解放と脱出の検証 |
 

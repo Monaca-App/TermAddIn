@@ -1,0 +1,66 @@
+; ==============================================================================
+; Common.Core.Commands Sample: Sequence ドメイン (主要フロー制御コマンド網羅)
+; 対象: Version / Loop / Next / Break / Judge / Jump / Equal / Call / Return
+;       OnError / SetError / ClearError / Wait / WaitMs / WaitSec / Msg_Box / Exit
+; ==============================================================================
+TITLE, "Core Sequence フロー制御サンプル"
+
+COMMAND, "VER_CHECK", "RESULT_DATA"
+,PARAM, MIN_VER, Text, "最小要求バージョン", "1.0.0"
+,PARAM, RESULT_DATA, Text, "バージョン検査結果", ""
+,SEQUENCE, 10, Version, "$MIN_VER$", #VER_NG#
+,SEQUENCE, 20, CalcExpression, "RESULT_DATA", "1"
+,SEQUENCE, 30, Exit
+,SEQUENCE, #VER_NG#, CalcExpression, "RESULT_DATA", "0"
+,SEQUENCE, 50, Exit
+
+COMMAND, "LOOP_SUM", "RESULT_DATA"
+,PARAM, LOOP_CNT, Text, "反復回数", "5"
+,PARAM, LIMIT_VAL, Text, "途中脱出上限", "100"
+,PARAM, ACC_VAL, Work, "累積値", "0"
+,PARAM, IDX_VAR, Work, "ループ変数", "0"
+,PARAM, RESULT_DATA, Text, "合計結果", ""
+,SEQUENCE, 10, CalcExpression, "ACC_VAL", "0"
+,SEQUENCE, 20, Loop, "$LOOP_CNT$", "IDX_VAR", #LOOP_DONE#
+,SEQUENCE, 30, Param_Add, "LOOP_SUM", "ACC_VAL", "10"
+,SEQUENCE, 40, Judge, LTE, "$ACC_VAL$", "$LIMIT_VAL$", #FORCE_BREAK#
+,SEQUENCE, 50, Next, "IDX_VAR"
+,SEQUENCE, #LOOP_DONE#, Param_Move, "LOOP_SUM", "ACC_VAL", "LOOP_SUM", "RESULT_DATA"
+,SEQUENCE, 70, Exit
+,SEQUENCE, #FORCE_BREAK#, Break, #LOOP_DONE#
+
+COMMAND, "BRANCH_DEMO", "RESULT_DATA"
+,PARAM, INPUT_STR, List, "判定文字列", "OK", "WARN", "NG"
+,PARAM, RESULT_DATA, Text, "分岐結果コード", ""
+,SEQUENCE, 10, Equal, "$INPUT_STR$", "OK", #IS_OK#
+,SEQUENCE, 20, Equal, "$INPUT_STR$", "WARN", #IS_WARN#
+,SEQUENCE, 30, CalcExpression, "RESULT_DATA", "-1"
+,SEQUENCE, 40, Jump, #END_BRANCH#
+,SEQUENCE, #IS_OK#, CalcExpression, "RESULT_DATA", "1"
+,SEQUENCE, 60, Jump, #END_BRANCH#
+,SEQUENCE, #IS_WARN#, CalcExpression, "RESULT_DATA", "0"
+,SEQUENCE, #END_BRANCH#, Exit
+
+COMMAND, "ERROR_TRAP_DEMO", "RESULT_DATA"
+,PARAM, TRIGGER_ERR, List, "エラー発生テスト", "ON", "OFF"
+,PARAM, RESULT_DATA, Text, "トラップ結果", ""
+,SEQUENCE, 10, ClearError
+,SEQUENCE, 20, OnError, #ERR_HANDLER#
+,SEQUENCE, 30, Equal, "$TRIGGER_ERR$", "OFF", #NO_ERR#
+,SEQUENCE, 40, SetError, "-99", "テスト用疑似エラー"
+,SEQUENCE, #NO_ERR#, CalcExpression, "RESULT_DATA", "0"
+,SEQUENCE, 60, Exit
+,SEQUENCE, #ERR_HANDLER#, ClearError
+,SEQUENCE, 80, CalcExpression, "RESULT_DATA", "99"
+,SEQUENCE, 90, Exit
+
+COMMAND, "WAIT_DIALOG_DEMO", "RESULT_DATA"
+,PARAM, WAIT_MS, Text, "待機時間(ms)", "200"
+,PARAM, WAIT_S, Text, "待機秒数(sec)", "0.2"
+,PARAM, MSG_TEXT, Text, "表示メッセージ", "Core Sequence サンプルの実行確認です。"
+,PARAM, RESULT_DATA, Text, "ダイアログ応答", ""
+,SEQUENCE, 10, Wait, "$WAIT_MS$"
+,SEQUENCE, 20, WaitMs, "$WAIT_MS$"
+,SEQUENCE, 30, WaitSec, "$WAIT_S$"
+,SEQUENCE, 40, Msg_Box, "$MSG_TEXT$", "確認", "OK", "RESULT_DATA"
+,SEQUENCE, 50, Exit

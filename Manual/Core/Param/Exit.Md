@@ -2,11 +2,11 @@
 
 ## 概要
 
-`Exit` は、サブルーチンからの復帰（Return 動作）またはメインシーケンス全体の正常終了（Exit 動作）を行う共通パラメータ・呼出・ループ制御系コマンドです。  
-実行コンテキストのコールスタックに呼出元フレームが存在する場合はその復帰先行へ制御を戻し、コールスタックが空（トップレベル実行中）の場合はシーケンス全体を正常終了させます。
+`Exit` は、コールスタックの状態に応じてサブルーチンからの復帰（Return 動作）またはメインシーケンス全体の終了（`Halt` 動作）を行う共通シーケンス・終了制御系コマンド（`Common.Commands.Sequence.dll`）です。  
+実行コンテキストのコールスタック（`SequenceStackHelper`）に呼出元の復帰先ラベルが存在する場合は親コマンドを復元して復帰先行へジャンプ（`Jump`）し、コールスタックが空（トップレベル実行中）の場合は `AnalysisResult.Halt` を返却してシーケンス全体を終了させます（`ErrorCode == 0` 時はドライバ側で正常完了として扱われます）。
 
 > 💡 **補足**  
-> 本コマンドは 共通基盤コマンドです。[`Call`](./Call.Md) と対になってサブルーチンのライフサイクルを完結させます。
+> 本コマンドは共通基盤コマンドです。サブルーチンからの明示的な復帰には専用コマンド [`Return`](../Sequence/Return.Md)（エイリアス `Ret`, `Analysis_Term_Return`）も使用できます。
 
 ---
 
@@ -15,15 +15,15 @@
 ### コマンド構文
 
 ```csv
-,SEQUENCE, [ステップキー], Exit, "[メッセージ / 戻り値]", "[エラーコード]"
+,SEQUENCE, [ステップキー], Exit, "[メッセージ / 戻り値(MessageOrReturnValue)]", "[エラーコード(ErrorCode)]"
 ```
 
 ### パラメータ（引数）一覧
 
 | 引数位置 | 引数名 | 説明 | 指定方法 / 有効な入力値 |
 | :--- | :--- | :--- | :--- |
-| 引数1 | Message / ReturnValue | 終了時または復帰時に出力・保持するメッセージまたは戻り値文字列（任意・省略可）。 | 任意の文字列または `$PARAM$` 置換（省略時は既定の完了状態） |
-| 引数2 | ErrorCode | 終了ステータスコード（任意・省略可・既定値: `"0"`）。 | `"0"`（正常終了）または任意の整数ステータスコード |
+| 引数1 | `MessageOrReturnValue` | 終了メッセージ、またはサブルーチン復帰時に `$RETURN_VALUE$` へ格納する戻り値文字列（任意・省略時既定値: `""`）。 | 任意の文字列または `$PARAM$` 置換（省略時はトップレベル終了時に既定の終了メッセージを適用） |
+| 引数2 | `ErrorCode` | 終了ステータスコード（任意・省略可・既定値: `0`）。 | `0`（正常終了扱い）または任意の整数ステータスコード |
 
 ---
 
@@ -34,7 +34,7 @@
 * **ジャンプ先指定（`#`）**: 復帰先はコールスタックから自動解決されるため、`#` によるラベル指定は適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを指定しないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: メッセージ文字列自体にカンマを含める場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `Return`, `Ret`, `Halt`, `Stop`, `End`, `GpibExit`, `Analysis_Term_Exit`
+* **エイリアス（別名）**: `Halt`, `Stop`, `End`, `Gpib_Exit`, `Analysis_Term_Exit`
 
 ---
 
@@ -72,18 +72,19 @@ sequenceDiagram
     autonumber
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "ExitCommand"
-    participant Stack as "CallStack (ParamStackHelper)"
+    participant Stack as "SequenceStackHelper (CallStack)"
 
-    Engine->>Cmd: ExecuteAsync(Args)
+    Engine->>Cmd: ExecuteAsync(MessageOrReturnValue, ErrorCode)
     activate Cmd
-    Cmd->>Stack: TryPopCallFrame()
+    Cmd->>Stack: TryPopReturnLabel(context)
     activate Stack
-    alt コールスタックに復帰先フレームが存在する場合 (サブルーチン内)
-        Stack-->>Cmd: CallFrame (CallerCommand, ReturnStepKey)
-        Cmd-->>Engine: 呼出元復帰指示 (Return to CallerCommand:ReturnStepKey)
-    else コールスタックが空の場合 (メインシーケンス直下)
-        Stack-->>Cmd: Empty
-        Cmd-->>Engine: シーケンス全体完了指示 (Terminate Sequence)
+    alt コールスタックに復帰先ラベルが存在する場合 (サブルーチン内)
+        Stack-->>Cmd: returnLabel ＆ CallContextFrame
+        Cmd->>Cmd: 親コマンド復元 ＆ ResultItem / $RETURN_VALUE$ 更新
+        Cmd-->>Engine: 呼出元復帰ジャンプ指示 (Jump -> returnLabel)
+    else コールスタックが空の場合 (トップレベル実行中)
+        Stack-->>Cmd: false (Empty)
+        Cmd-->>Engine: シーケンス全体終了 (Halt: Message, ErrorCode)
     end
     deactivate Stack
     deactivate Cmd
@@ -95,10 +96,10 @@ sequenceDiagram
 
 入力データの異常や実行時エラーに対し、解析・実行エンジンが実行するセーフティ規約です。
 
-1. **非ゼロのエラーコード指定時（引数 2 に `"0"` 以外を指定）**:
-   - 明示的な異常終了要求として認識し、指定されたメッセージとエラーコードを `_log.LogError` に記録した上でシーケンスを安全停止します。
-2. **サブルーチン内でオープンされたループスタックの自動クリーンアップ**:
-   - サブルーチン内の [`Loop`](./Loop.Md) ブロック途中で `Exit` が実行された場合、当該サブルーチンスコープに属する未完了の `LoopFrame` を自動的に破棄し、呼出元のループスタックが汚染されないよう保護します。
+1. **トップレベル終了時のステータスコード伝播**:
+   - コールスタックが空の状態で実行された場合は `AnalysisResult.Halt(haltMessage, errCode)` を返却します。`ErrorCode == 0` の場合はドライバ側で正常終了として完了し、非ゼロ整数を指定した場合は異常終了コードとして上位へ伝播します（サブルーチン内の `LoopFrame` を自動破棄する処理は行わないため、ループ途中から抜ける場合は [`Break`](./Break.Md) を併用してください）。
+2. **未定義マクロトークン参照および型不整合時の防御**:
+   - 第 1 引数内に未定義の `$PARAM$` トークンが含まれる場合は `_log.LogError` を記録して `Halt(-12)` を返し、第 2 引数 `ErrorCode` に非整数文字列が指定された場合は `OptionalInt` パイプライン検証で実行前に拒否します。
 
 ---
 
@@ -116,7 +117,6 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | コールスタックにフレームがある状態で `Exit` 実行 | フレームが Pop され、呼出元の復帰ステップへ制御が戻る | サブルーチン Return 動作の検証 |
-| **2** | 正常系 | コールスタックが空の状態で `Exit` 実行 | シーケンス全体の正常完了フラグがセットされ `Success` 返却 | トップレベル Exit 動作の検証 |
-| **3** | 異常系 | 引数 2 に非ゼロエラーコード（`"Exit", "異常停止", "99"`）を指定 | エラーログが記録され異常終了ステータスが返却される | 明示的エラー終了コード指定時の動作検証 |
+| **1** | 正常系 | コールスタックに `"#30#"` および親 `MAIN` がある状態で `("$RESULT_VAL$", "0")` 実行 | `"#30#"` へ `Jump` し、`$RETURN_VALUE$` および親 `RET_SLOT` に `"MEAS_OK"` が格納されカレントコマンドが `MAIN` に復元される | サブルーチン Return 動作・戻り値引継の検証 |
+| **2** | 正常系 | コールスタックが空の状態で終了メッセージと `"0"` を指定して実行 | `AnalysisResultStatus.Halt`（`ErrorCode == 0`、指定メッセージ保持）が返却される | トップレベル Exit（正常終了コード付き `Halt`）動作の検証 |
 

@@ -36,7 +36,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: 引数 4 にカンマ自体を指定する場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `ArrayInit`, `GpibArray_Init`, `Analysis_Term_Array_Init`
+* **エイリアス（別名）**: `Gpib_Array_Init`, `Term_Array_Init`, `Analysis_Term_Array_Init`
 
 ---
 
@@ -58,7 +58,7 @@ COMMAND, "INIT_MEAS_TABLE", "DATA_TABLE"
 ### 実行時の挙動・変数変化
 
 * **実行前の状態**: `"DATA_TABLE"` が空文字列 `""`、`"COLS"` が `"3"`、`"ROWS"` が `"2"` の状態。
-* **実行後の状態**: `"DATA_TABLE"` に 3 列（空セル 3 個分のカンマ 2 個 `",,"`）× 2 行（`"\r\n"` 区切り）の空テーブル文字列 `",,"\r\n",,"` が生成・格納されます。
+* **実行後の状態**: `"DATA_TABLE"` に 3 列（空セル 3 個分のカンマ 2 個 `",,"`）× 2 行（`"\r\n"` 区切り）の空テーブル文字列 `",,\r\n,,"` が生成・格納されます。
 
 ---
 
@@ -71,20 +71,20 @@ sequenceDiagram
     autonumber
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "Array_InitCommand"
+    participant Target as "TargetResolver / ArrayStorage"
     participant Buffer as "TableBuffer (2次元テーブル処理)"
-    participant Target as "TargetResolver / パラメータ辞書"
 
-    Engine->>Cmd: ExecuteAsync(Target, ColCount, RowCount, Delimiter)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
-    Cmd->>Cmd: ColCount, RowCount の数値検証 (>= 1)
-    alt 正常な行列サイズ指定
-        Cmd->>Buffer: CreateEmptyTable(ColCount, RowCount, Delimiter)
-        Buffer-->>Cmd: 初期化済み2次元テキスト文字列
-        Cmd->>Target: SetTargetValue(Target, TableText)
-        Cmd-->>Engine: 実行完了 (Success)
-    else 0 以下のサイズ指定 または 未定義ターゲット
+    Cmd->>Target: TryResolve(Target, context, out targetBuffer) ＆ TryResolveAndParseInt(ColCount, RowCount)
+    alt ターゲット解決成功 かつ 有効な行列サイズ (1 <= ColCount <= 10000, 1 <= RowCount <= 100000)
+        Cmd->>Buffer: CreateEmpty(ColCount, RowCount, Delimiter) ＆ ToDelimitedText()
+        Buffer-->>Cmd: 初期化済み TableBuffer ＆ tableText
+        Cmd->>Target: targetBuffer.Value = tableText ＆ ArrayStorage.SetTable(targetBuffer.Key, table)
+        Cmd-->>Engine: AnalysisResult.Success(...)
+    else 0 以下のサイズ指定 / 上限超過 / 未定義ターゲット
         Cmd->>Cmd: エラーログ出力 (_log.LogError)
-        Cmd-->>Engine: 実行失敗・即時中断 (Halt)
+        Cmd-->>Engine: AnalysisResult.Halt(errMsg, errorCode)
     end
     deactivate Cmd
 ```
@@ -116,7 +116,8 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 3列×2行・カンマ区切り（`"TBL", "3", "2", ","`） | `",,"\r\n",,"` が格納され `Success` 返却 | 2次元テーブル初期化の基本動作検証 |
-| **2** | 正常系 | デリミタ省略時（`"TBL", "2", "1"`） | 既定のカンマ区切り `","` で初期化される | 省略時既定デリミタの検証 |
-| **3** | 異常系 | 列数または行数に `"0"` または `"-1"` を指定 | エラーログが出力され `Failure` で安全停止する | 不正サイズ指定に対するガード検証 |
+| **1** | 正常系 | 3列×2行・カンマ区切り・16進マクロ展開（`"DATA_TABLE", "$COLS$"="0x03", "2", ","`） | `",,\r\n,,"` が格納され `Success` 返却 | 2次元テーブル初期化および基数自動認識の検証 |
+| **2** | 正常系 | デリミタ省略時およびホストレジスタ指定（`"$0", "2", "2"`） | 既定のカンマ区切り `","` で `",\r\n,"` に初期化される | 省略時既定デリミタおよびレジスタ対応の検証 |
+| **3** | 異常系 | 0 以下のサイズ指定（`"DATA_TABLE", "0", "2", ","`） | エラーログが出力され `Halt` で安全停止する | 不正サイズに対するガード検証 |
+| **4** | 異常系 | 未定義ターゲットパラメータ指定（`"UNDEFINED_PARAM", "2", "2", ","`） | エラーログが出力され `Halt` で安全停止する | 未定義ターゲットキーアクセス防御の検証 |
 

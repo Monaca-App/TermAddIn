@@ -24,8 +24,8 @@
 | :--- | :--- | :--- | :--- |
 | 引数1 | `Message` | ダイアログ本文に表示するメッセージ文字列（必須）。 | 任意の文字列または `$PARAMキー$` 置換 |
 | 引数2 | `Title` | ダイアログウィンドウのタイトル文字列（任意・省略可）。 | 任意の文字列（省略時の既定値: `"確認"`）、`$PARAMキー$` 置換可 |
-| 引数3 | `Buttons` | 表示するボタン構成（任意・省略可）。 | `"OK"`（既定値）、`"OKCancel"`、`"YesNo"` |
-| 引数4 | `ResultVar` | 押下されたボタン名（`"OK"`, `"Cancel"`, `"Yes"`, `"No"`）を格納する `PARAM` キー名（任意・省略可）。 | 定義済みの `PARAM` キー名（`COMMAND` の `ResultItem` に指定することでシート側へも出力可能） |
+| 引数3 | `Buttons` | 表示するボタン構成（任意・省略可）。 | `"OK"`（既定値）、`"OKCancel"`、`"YesNo"`（未定義文字列指定時は警告ログ出力の上 `"OK"` へフォールバック） |
+| 引数4 | `ResultVar` | 押下されたボタン名（`"OK"`, `"Cancel"`, `"Yes"`, `"No"`）を格納する `PARAM` キー名（任意・省略可）。 | 定義済みの `PARAM` キー名（なお `ResultVar` 省略時も含め、選択結果は常にシステム変数 `$LAST_MSGBOX_RESULT$` にも保存される） |
 | 引数5 | `CancelOrNoJumpParamNo` | `Cancel` または `No` が選択された際の遷移先シート行を保持する公開パラメータ番号（任意・省略可）。 | `1` 以上の整数（`"1"`, `"2"`, ...）または省略 |
 
 ---
@@ -54,7 +54,7 @@
 
 ```csv
 COMMAND, "VISUAL_CHECK_LED", "BTN_RES"
-,PARAM, "NG_ROW", String, "目視NG時ジャンプ先", "LED_NG_PROC"
+,PARAM, "NG_ROW", Text, "目視NG時ジャンプ先", "LED_NG_PROC"
 ,PARAM, "BTN_RES", Work, "目視判定結果", ""
 ,SEQUENCE, 010, Excel_Msg_Box, "緑色LEDが点灯していますか？", "外観目視検査", "YesNo", "BTN_RES", 1
 ```
@@ -78,22 +78,26 @@ sequenceDiagram
     participant Engine as "解析エンジン (ParameterizedSequenceDriver)"
     participant Cmd as "ExcelMsgBoxCommand"
 
-    Bridge->>Engine: ExecuteStepAsync(rowData)
-    Engine->>Cmd: Execute(Message, Title, Buttons, ResultVar, CancelOrNoJumpParamNo)
+    Bridge->>Engine: ExecuteStepAsync(rowData, cancellationToken)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
-    Cmd->>Operator: MessageBox 表示 (Test モード時は自動応答)
-    Operator-->>Cmd: ボタン選択 (OK / Yes / Cancel / No)
-    opt ResultVar 指定あり
-        Cmd->>Cmd: Context 変数 ResultVar へ選択ボタン名を格納
+    Cmd->>Operator: SelectDialogButton / MessageBox.Show (Test・ヘッドレス時は自動応答)
+    Operator-->>Cmd: selectedButton (OK / Yes / Cancel / No)
+    Cmd->>Cmd: context.SetVariable("$LAST_MSGBOX_RESULT$", selectedButton)
+    opt ResultVar 指定あり (TargetResolver.TryResolve 解決済み)
+        Cmd->>Cmd: resultBuffer.Value = selectedButton (PARAM バッファへ格納)
     end
     alt OK または Yes 選択
-        Cmd-->>Engine: AnalysisResult.Success() (Flow=Next)
-        Engine-->>Bridge: 次ステップ行へ進行
-    else Cancel または No 選択 (CancelOrNoJumpParamNo あり)
-        Cmd-->>Engine: AnalysisResult.ExcelJump(CancelOrNoJumpParamNo)
+        Cmd-->>Engine: AnalysisResult.Success(selectedButton) (Flow=Next)
+        Engine-->>Bridge: 次ステップ行へ進行 (Flow=Next)
+    else Cancel または No 選択 (CancelOrNoJumpParamNo 指定あり)
+        Cmd-->>Engine: AnalysisResult.ExcelJump(cancelJumpParamNo, jumpMsg)
         Engine-->>Bridge: 指定パラメータ番号のシート行へ分岐 (Flow=Jump)
-    else Cancel または No 選択 (両方省略)
-        Cmd-->>Engine: AnalysisResult.ExcelHalt(...)
+    else Cancel または No 選択 (CancelOrNoJumpParamNo 省略・ResultVar 指定あり)
+        Cmd-->>Engine: AnalysisResult.Success(selectedButton) (Flow=Next)
+        Engine-->>Bridge: 選択結果を保持して次ステップへ進行 (Flow=Next)
+    else Cancel または No 選択 (CancelOrNoJumpParamNo・ResultVar 両方省略)
+        Cmd-->>Engine: AnalysisResult.ExcelHalt(cancelMsg, -15)
         Engine-->>Bridge: 当該行番地を現在位置に保持して安全停止 (Flow=Halt)
     end
     deactivate Cmd
@@ -105,10 +109,10 @@ sequenceDiagram
 
 入力データの異常に対し、解析エンジンが実行するセーフティ規約です。
 
-1. **本文メッセージ未指定または不正なボタン種別・パラメータ番号**:
-   - 引数 1 `Message` が省略された場合、未対応の `Buttons` 文字列が指定された場合、または `CancelOrNoJumpParamNo` に `0` 以下の値や非数値が指定された場合は `_log.LogError` に記録し `ExcelSequenceFlow.Halt` で安全停止します。
-2. **ヘッドレス単体テスト時の非ブロッキング保証**:
-   - `ErrorLogger.MinimumLevel == LogLevel.Test` 環境下ではモーダルダイアログを表示せず既定応答で即時通過するため、CI/CD コンソールテストが停止しません。
+1. **本文メッセージ未指定・未定義 `ResultVar`・不正なパラメータ番号の防御、および未対応 `Buttons` の安全フォールバック**:
+   - 引数 1 `Message` が省略された場合、未定義の `ResultVar` が指定された場合、または `CancelOrNoJumpParamNo` に `0` 以下の値や非数値が指定された場合は `_log.LogError` に記録し `ExcelSequenceFlow.Halt` で安全停止します。一方、`Buttons` に未対応の文字列が渡された場合は停止せず、警告ログ（`_log.LogWarning`）を出力した上で既定の `"OK"` ボタンへ安全にフォールバックして処理を継続します。
+2. **`$LAST_MSGBOX_RESULT$` 保存およびヘッドレス単体テスト時の非ブロッキング保証**:
+   - 選択されたボタン文字列は常にコンテキスト変数 `$LAST_MSGBOX_RESULT$` に保存されます。また、`ErrorLogger.MinimumLevel == LogLevel.Test` 環境下ではモーダルダイアログを表示せず既定応答（または `MockDialogResult`）で即時通過するため、CI/CD コンソールテストが停止しません。
 
 ---
 
@@ -126,6 +130,7 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | `Test` モードでの OK 応答・`ResultVar` 格納検証 | モーダル待機せず `ResultVar = "OK"` かつ `Flow = Next` が返る | ヘッドレス自動承認および変数格納の検証 |
-| **2** | 正常系 | `Cancel` / `No` 応答時の分岐・変数格納・`Halt` 判定検証 | 分岐指定時は `Flow = Jump`、両方省略時は `Flow = Halt` が返る | 選択結果別の 3 分岐ロジック検証 |
-| **3** | 異常系 | 不正な `CancelOrNoJumpParamNo`（`"0"`）または未定義 `Buttons` 指定 | エラーログが出力され `Flow = Halt` が返る | 不正引数に対する防御検証 |
+| **1** | 正常系 | `Test` モードでの既定自動承認（`"YesNo"`, `ResultVar = "ANS"`） | モーダル待機せず `ANS == "Yes"` かつ `Flow = Next` が返る | ヘッドレス自動承認および変数格納の検証 |
+| **2** | 正常系 | `No` 応答かつ `CancelOrNoJumpParamNo = 2` 指定 | `Flow = Jump`（`TargetParamNumber = 2`）かつ `ANS == "No"` が返る | 否定応答時のパラメータ番号分岐ジャンプ検証 |
+| **3** | 正常系 | `Cancel` 応答かつ `CancelOrNoJumpParamNo` 省略・`ResultVar = "ANS"` 指定 | `ANS == "Cancel"` が格納され `Flow = Next` が返る | `ResultVar` のみ指定時の後続ステップ継続検証 |
+| **4** | 異常系 | `Cancel` 応答かつ `CancelOrNoJumpParamNo`・`ResultVar` ともに省略 | 警告ログが出力され `Flow = Halt`（エラーコード `-15`）で安全停止する | 分岐・結果変数省略時のオペレーター中止停止検証 |

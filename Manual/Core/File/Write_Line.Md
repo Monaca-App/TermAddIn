@@ -36,7 +36,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: `<Text>` に CSV のカンマ区切り文字列を指定する場合は、必ず `"CH1,5.01,PASS"` のように二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `WriteLine`
+* **エイリアス（別名）**: `FileWriteLine`, `Gpib_WriteLine`, `Term_WriteLine`, `Analysis_Term_WriteLine`
 
 ---
 
@@ -72,24 +72,23 @@ sequenceDiagram
     autonumber
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "Write_LineCommand"
-    participant Resolver as "FilePathResolver"
-    participant FS as "OS ファイルシステム"
+    participant Resolver as "FilePathResolver / TargetResolver"
+    participant FS as "FileStream / StreamReader / StreamWriter"
 
-    Engine->>Cmd: ExecuteAsync(FilePath, Text, LineNumber)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
-    Cmd->>Resolver: ResolveRelativePath(FilePath)
-    Resolver-->>Cmd: 解決済みフルパス (ResolvedPath)
-    alt LineNumber 省略時 (末尾1行追記モード)
-        Cmd->>FS: File.AppendAllTextAsync(ResolvedPath, Text + "\r\n")
-        FS-->>Cmd: 追記完了
-        Cmd-->>Engine: 実行完了 (Success)
+    Cmd->>Resolver: TryResolvePath(FilePath) ＆ ResolveSourceContent(Text) ＆ TryResolveEncoding(Encoding)
+    alt LineNumber 省略時 (末尾 1 行追記モード)
+        Cmd->>FS: 親フォルダ作成 ＋ FileStream(FileMode.Append) ＋ StreamWriter.WriteLineAsync(lineText)
+        FS-->>Cmd: CRLF 終端追記 ＆ FlushAsync() 完了
+        Cmd-->>Engine: AnalysisResult.Success(...)
     else LineNumber >= 1 指定時 (指定行更新モード)
-        Cmd->>FS: 行リスト読込・対象行更新(不足行補完)・CRLF保存
-        FS-->>Cmd: 更新完了
-        Cmd-->>Engine: 実行完了 (Success)
-    else LineNumber <= 0 または I/O エラー
-        Cmd->>Cmd: エラーログ出力 (_log.LogError)
-        Cmd-->>Engine: 実行失敗・安全停止 (Halt)
+        Cmd->>FS: StreamReader.ReadLineAsync() で既存行読込・不足行補完・StreamWriter.WriteLineAsync() で CRLF 保存
+        FS-->>Cmd: 更新 ＆ FlushAsync() 完了
+        Cmd-->>Engine: AnalysisResult.Success(...)
+    else LineNumber <= 0 / パス不正 / IOException
+        Cmd->>Cmd: エラーログ出力 (_log.LogError / _log.LogCritical)
+        Cmd-->>Engine: AnalysisResult.Halt(errMsg, errorCode)
     end
     deactivate Cmd
 ```
@@ -115,13 +114,13 @@ sequenceDiagram
 
 * **実行トリガー**: `RunUnitTest()` メソッドの呼び出し
 * **有効化条件**: システム全体の最小ログレベル（`ErrorLogger.MinimumLevel`）が `LogLevel.Test` であること（それ以外の場合は無効化ガードにより早期リターン）
-* **検証結果出力**: `_log.LogTest` によるログ出力。検証失敗時は `_log.LogError`、予期せぬ例外発生時は `_log.LogCritical` で記録。
+* **検証結果出力**: `_log.LogTest` によるログ出力。検証失敗時は `_log.LogError`、予期せぬ例外発生時は `_log.LogCritical` で記録し、`finally` ブロックでテスト用一時ディレクトリを削除します。
 
 ### テストケース一覧
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 行番号省略での1行書込（`"LINE_1"`） | ファイル末尾に `"LINE_1\r\n"` が追記される | 末尾1行追記の基本動作検証 |
-| **2** | 正常系 | 行番号指定での更新（`LineNumber="2", Text="UPDATED"`） | 2行目が `"UPDATED"` に書き換わる | 指定行ピンポイント更新の検証 |
-| **3** | 異常系 | 0以下の行番号指定（`LineNumber="0"`） | エラーログが出力され `Failure` で安全停止する | 不正行番号ガードの検証 |
+| **1** | 正常系 | `"MEAS_VAL" = "5.004"` の状態で `"./seq_log.csv"` に行番号省略で `"LINE_1"` と `"CH1,$MEAS_VAL$"` を 2 回連続追記実行 | ファイル末尾に CRLF 付きで追記され内容が `"LINE_1\r\nCH1,5.004\r\n"` となる | 行番号省略時の末尾 1 行 CRLF 追記および `$PARAM$` 展開の検証 |
+| **2** | 正常系 | `"./seq_log.csv"` に行番号指定での更新（`Text="UPDATED"`, `LineNumber="2"`）を実行 | 1 行目 `"LINE_1"` を維持したまま 2 行目が `"UPDATED"` に書き換わる | 指定行ピンポイント更新の検証 |
+| **3** | 異常系 | 0 以下の行番号指定（`"./seq_log.csv"`, `Text="BAD_LINE"`, `LineNumber="0"`） | エラーログが出力され `Halt` で安全停止する | 不正行番号ガードの検証 |
 

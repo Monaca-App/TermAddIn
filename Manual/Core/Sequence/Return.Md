@@ -2,11 +2,11 @@
 
 ## 概要
 
-`Return` は、コールスタックに退避されているサブルーチン呼出元の復帰ステップを取り出して制御を戻し、任意の戻り値（`ReturnValue`）をシステム変数 `$RETURN_VALUE$` へ設定する共通シーケンス制御系コマンドです。  
-`Call` コマンドで呼び出されたサブルーチン処理の末尾で呼出元へ復帰する際に使用します。
+`Return` は、コールスタック（[`Call`](../Param/Call.Md) と連携する `SequenceStackHelper`、および旧互換 `SequenceCommandHelper`）に退避されているサブルーチン呼出元の復帰先ラベル／ステップを取り出して制御を戻し、任意の戻り値（`ReturnValue`）をシステム変数 `$RETURN_VALUE$` および呼出元コマンドの戻り値パラメータ（`ResultItem`）へ設定する共通シーケンス制御系コマンドです。  
+[`Call`](../Param/Call.Md) コマンドで呼び出されたサブルーチン処理の末尾で呼出元へ復帰する際に使用します。
 
 > 💡 **補足**  
-> コールスタックが空の状態（トップレベル実行中）で呼び出された場合は例外エラーとせず、通常の次ステップへ安全に進行します。
+> `SequenceStackHelper` に `CallContextFrame` が退避されている場合は、呼出元コマンド（`CallerCommand`）およびアクティブデバイス名（`CallerDeviceName`）も自動的に復元されます。コールスタックが空の状態（トップレベル実行中）で呼び出された場合は例外エラーとせず、通常の次ステップへ安全に進行（`Success`）します。
 
 ---
 
@@ -66,19 +66,24 @@ sequenceDiagram
     autonumber
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "ReturnCommand"
-    participant Stack as "SequenceCommandHelper (コールスタック)"
+    participant Stack as "SequenceStackHelper / SequenceCommandHelper"
 
     Engine->>Cmd: ExecuteAsync(ReturnValue)
     activate Cmd
+    Cmd->>Cmd: ReturnValue のマクロ展開 ($PARAM$)
     opt ReturnValue が非空の場合
         Cmd->>Cmd: context.SetVariable("$RETURN_VALUE$", ReturnValue)
     end
-    Cmd->>Stack: TryPopReturnStep(context, out returnStep)
-    alt コールスタックに復帰先が存在する場合
+    Cmd->>Stack: SequenceStackHelper.TryPopReturnLabel(context, out returnLabel)
+    alt SequenceStackHelper に復帰先ラベルが存在する場合 (Call 連携)
+        Stack-->>Cmd: true (returnLabel, CallContextFrame)
+        Cmd->>Cmd: CallerCommand / ResultItem / ActiveDevice 復元
+        Cmd-->>Engine: 復帰ジャンプ指示 (Jump -> returnLabel)
+    else 旧互換 SequenceCommandHelper に復帰先ステップが存在する場合
+        Cmd->>Stack: SequenceCommandHelper.TryPopReturnStep(context, out returnStep)
         Stack-->>Cmd: true (returnStep)
         Cmd-->>Engine: 復帰ジャンプ指示 (Jump -> returnStep)
-    else コールスタックが空の場合
-        Stack-->>Cmd: false
+    else いずれのコールスタックも空の場合
         Cmd-->>Engine: 次ステップ継続 (Success)
     end
     deactivate Cmd
@@ -90,10 +95,10 @@ sequenceDiagram
 
 入力データの異常や実行時エラーに対し、解析・実行エンジンが実行するセーフティ規約です。
 
-1. **コールスタック空時のアンダーフロー防止**:
-   - サブルーチン外で単体実行された場合でもスタックアンダーフロー例外を送出せず、`TryPopReturnStep` により安全に次ステップへ進行します。
-2. **戻り値省略時の既存状態保全**:
-   - `ReturnValue` が空文字列（省略）の場合は不要な上書きを行わず、既存のコンテキスト状態を維持して復帰します。
+1. **`SequenceStackHelper` 統合による呼出元コンテキスト復元とアンダーフロー防止**:
+   - [`Call`](../Param/Call.Md) 経由の呼出時は `SequenceStackHelper` から復帰ラベルと `CallContextFrame`（親コマンド・`ResultItem`・アクティブデバイス）を確実に復元し、サブルーチン外で単体実行された場合でもスタックアンダーフロー例外を送出せず安全に次ステップへ進行（`Success`）します。
+2. **戻り値省略時の既存状態保全と過剰引数拒否**:
+   - `ReturnValue` が空文字列（省略）の場合は不要な上書きを行わず、2 個以上の過剰引数が指定された場合は `CommandParameterPipeline` が実行前に拒否します。
 
 ---
 
@@ -111,6 +116,7 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 復帰先 `15` を Push 済みの状態で `("OK")` を実行 | `Status == Jump`（`15`）かつ `$RETURN_VALUE$ == "OK"` | コールスタック復帰と戻り値格納の検証 |
-| **2** | 異常系 | コールスタックが空の状態で `Return` を実行 | 例外クラッシュせず `Status == Success` で安全完了 | スタックアンダーフロー防御の検証 |
+| **1** | 正常系 | `SequenceStackHelper.PushReturnLabel("25")` 有時に `("RET_CALL")` を実行 | `Status == Jump`（`NextStepOverride == 25`）かつ `$RETURN_VALUE$ == "RET_CALL"` | `Call` 連携コールスタック復帰と戻り値格納の検証 |
+| **2** | 正常系 | 旧互換 `SequenceCommandHelper.PushReturnStep(15)` 有時に `("OK")` を実行 | `Status == Jump`（`NextStepOverride == 15`）かつ `$RETURN_VALUE$ == "OK"` | 旧互換ステップスタック復帰の検証 |
+| **3** | 境界値・異常系 | スタック空状態で `Return` 実行、および過剰引数 `("OK", "EXTRA")` を検証 | スタック空時は `Status == Success` で継続し、過剰引数は `IsValid == false` で拒否 | スタックアンダーフロー防御および引数上限の検証 |
 

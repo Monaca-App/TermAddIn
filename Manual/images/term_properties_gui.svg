@@ -112,7 +112,7 @@
     <rect x="34" y="68" width="46" height="16" fill="#FFFFFF" />
     <text x="38" y="80" class="grp-lbl">ポート</text>
     <rect x="36" y="92" width="170" height="26" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.4" rx="3" />
-    <text x="46" y="109" class="mono" font-size="12" font-weight="700" fill="#1E3A8A">COM10  (物理 + c2c)</text>
+    <text x="46" y="109" class="mono" font-size="11.5" font-weight="700" fill="#1E3A8A">COM10 (物理+c2c/Emu)</text>
     <polygon points="192,102 200,102 196,108" fill="#1E40AF" />
 
     <!-- 左列2: 通信速度 -->
@@ -192,7 +192,7 @@
   <rect x="22" y="446" width="936" height="80" class="callout-box" />
   <text x="40" y="468" class="ui" font-size="11.5" font-weight="700" fill="#92400E">① 「コマンド集」タブ（全モード共通） ＋ ② 「通信ポート」等のモード別通信設定タブ ＋ ③ 「OK / キャンセル」</text>
   <text x="40" y="488" class="ui" font-size="11" fill="#451A03">・左図「コマンド集」では「コマンド追加」で CSV を登録し、「↑」「↓」で有効化するコマンド集（上段）と控えリスト（下段）を切り替えます。</text>
-  <text x="40" y="508" class="ui" font-size="11" fill="#451A03">・右図の第2タブ以降は通信モードに連動して［通信ポート］／［TELNET］／［Modbus RTU・Modbus TCP］／［MELSEC］／［MELSEC MC］が表示され、c2c 仮想ポートも自動列挙されます。</text>
+  <text x="40" y="508" class="ui" font-size="11" fill="#451A03">・右図の第2タブ以降は通信モードに連動して［通信ポート］／［TELNET］／［Modbus RTU・TCP］／［MELSEC］／［MELSEC MC］／［OMRON FINS］／［KEYENCE KV］へ切り替わります。</text>
 
   <!-- 番号バッジ -->
   <g>

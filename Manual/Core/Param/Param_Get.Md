@@ -23,8 +23,8 @@
 | 引数位置 | 引数名 | 説明 | 指定方法 / 有効な入力値 |
 | :--- | :--- | :--- | :--- |
 | 引数1 | SubroutineCommandName | 戻り値を取得する対象（呼出先）のマクロコマンド名（必須）。 | `COMMAND` で定義されたコマンド名（例: `"DCV_MEASURE"`）または `$PARAM$` 置換 |
-| 引数2 | MyParamKey1 | 第 1 ペアの格納先となる自コマンド（カレント）のパラメータキー名（必須）。 | 自コマンド内の `PARAM` キー名（例: `"MEAS_RESULT"`, `"1"`） |
-| 引数3 | ParamKey1 | 第 1 ペアの取得元となる相手コマンドのパラメータキー名（必須）。 | 対象コマンド内の `PARAM` キー名（例: `"RESULT_DATA"`, `"2"`） |
+| 引数2 | MyParamKey1 | 第 1 ペアの格納先となる自コマンド（カレント）のパラメータキー名（必須）。 | 自コマンド内の `PARAM` キー名（例: `"MEAS_RESULT"`, `"1"`）または `$PARAM$` 置換 |
+| 引数3 | ParamKey1 | 第 1 ペアの取得元となる相手コマンドのパラメータキー名（必須）。 | 対象コマンド内の `PARAM` キー名（例: `"RESULT_DATA"`, `"2"`）または `$PARAM$` 置換 |
 | 引数4以降 | MyParamKeyN, ParamKeyN | 第 2 ペア以降の `[自キーN], [相手キーN]` の組み合わせ（任意、可変長ペア）。 | 2 個 1 組のペア形式で任意個数まで連続指定可能 |
 
 ---
@@ -36,7 +36,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 引数 1 に対象コマンド名を指定する際、先頭に `@` を付与した場合は共通基盤（`GENERAL`）を対象とし、付与しない場合は現在の機器に対するマクロを対象とします。（適用可能な引数: 引数 1 `SubroutineCommandName`）
 * **カンマのエスケープ**: 引数文字列自体にカンマを含める場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `ParamGet`, `GetVar`, `GpibParamGet`, `Analysis_Term_PARAM_Get`（※内部では `FormatCommand` により `"PARAMGET"` として単一正規化解決）
+* **エイリアス（別名）**: `Term_PARAM_Get`, `Analysis_Term_PARAM_Get`, `Gpib_ParamGet`, `GetVar`（※内部では `FormatCommand` によりアンダースコア省略表記等も正規化解決）
 
 ---
 
@@ -47,6 +47,11 @@
 ※COMMAND ブロック配下の子要素行（PARAM, SEQUENCE）は必ず行頭カンマから開始し、スペースインデントや行末コメント（`;`）は記述しないでください。
 
 ```csv
+COMMAND, "DCV_MEASURE", "RESULT_DATA"
+,PARAM, "RESULT_DATA", Work, "測定結果データ", "+5.0012E+00"
+,PARAM, "STATUS_CODE", Work, "測定ステータス", "OK"
+,SEQUENCE, 010, Return
+
 COMMAND, "MAIN_SEQUENCE", "MEAS_VAL"
 ,PARAM, "MEAS_VAL", Work, "測定値格納用", ""
 ,PARAM, "MEAS_STAT", Work, "測定ステータス格納用", ""
@@ -125,7 +130,6 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 単一ペア回収（`"SUB_CMD", "MY_RES", "SUB_RES"`） | `"SUB_CMD"` の `"SUB_RES"` 値が自コマンド `"MY_RES"` に格納され `Success` 返却 | 単一戻り値回収の基本動作検証 |
-| **2** | 正常系 | 複数ペア一括回収（`"SUB_CMD", "MY_V1", "RES1", "MY_V2", "RES2"`） | 2 つのパラメータが同時に自コマンドへ複写される | 可変長ペアによる一括戻り値回収の検証 |
-| **3** | 異常系 | 存在しない取得元キー（`"SUB_CMD", "MY_RES", "NO_SUCH_KEY"`） | エラーログが出力され `Failure`（即時中断）が返却される | 未定義キー参照時の安全停止検証 |
+| **1** | 正常系 | 対象 `"DCV_MEASURE"`（`"2"="PASS_TERM"`, `"RESULT_DATA"="5.0012V"`, `"STATUS_CODE"="0"`）から `("DCV_MEASURE", "MY_RESULT", "RESULT_DATA", "MY_STATUS", "STATUS_CODE", "1", "2")` を実行 | 自コマンド `"MAIN"` の `"MY_RESULT"` に `"5.0012V"`、`"MY_STATUS"` に `"0"`、`"1"` に `"PASS_TERM"` が一括格納され `Success` 返却 | GPIB 英字キー・Term 数値キー混在の複数ペア一括回収の検証 |
+| **2** | 異常系 | 存在しない取得元キー（`"DCV_MEASURE", "MY_RESULT", "NO_SUCH_KEY"`）を指定 | エラーログが出力され `Halt`（即時中断）が返却される | 未定義キー参照時の Fail-Fast 安全停止検証 |
 

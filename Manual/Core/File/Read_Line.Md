@@ -36,7 +36,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: 引数文字列自体にカンマを含める場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `ReadLine`
+* **エイリアス（別名）**: `FileReadLine`, `Gpib_ReadLine`, `Term_ReadLine`, `Analysis_Term_ReadLine`
 
 ---
 
@@ -71,26 +71,24 @@ sequenceDiagram
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "Read_LineCommand"
     participant Resolver as "FilePathResolver"
-    participant FS as "OS ファイルシステム"
-    participant Target as "TargetResolver / パラメータ辞書"
+    participant Target as "TargetResolver (ITargetBuffer)"
+    participant FS as "FileStream / StreamReader"
 
-    Engine->>Cmd: ExecuteAsync(FilePath, LineNumber, Target)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
-    Cmd->>Cmd: LineNumber >= 1 の整数検証
-    Cmd->>Resolver: ResolveRelativePath(FilePath)
-    Resolver-->>Cmd: 解決済みフルパス (ResolvedPath)
-    Cmd->>FS: File.ReadLines(ResolvedPath).Skip(LineNumber - 1).FirstOrDefault()
-    activate FS
-    alt ファイルが存在 かつ 該当行またはEOF到達
-        FS-->>Cmd: 抽出行テキスト (範囲外時は "")
-        Cmd->>Target: SetTargetValue(Target, LineText)
-        Cmd-->>Engine: 実行完了 (Success)
-    else ファイル未存在 または LineNumber <= 0
-        FS-->>Cmd: エラー検出
-        Cmd->>Cmd: エラーログ出力 (_log.LogError)
-        Cmd-->>Engine: 実行失敗・安全停止 (Halt)
+    Cmd->>Target: TryResolveAndParseInt(LineNumber) ＆ TryResolve(Target, out targetBuffer)
+    Cmd->>Resolver: TryResolvePath(FilePath) ＆ TryResolveEncoding(Encoding)
+    alt LineNumber >= 1 かつ パス・ターゲット解決成功 かつ File.Exists(resolvedPath)
+        Cmd->>FS: FileStream(Open, Read, ReadWrite) ＋ StreamReader.ReadLineAsync() ループ走査
+        activate FS
+        FS-->>Cmd: 該当行テキスト extractedLine (EOF 超過時は "")
+        deactivate FS
+        Cmd->>Target: targetBuffer.Value = extractedLine
+        Cmd-->>Engine: AnalysisResult.Success(extractedLine)
+    else LineNumber <= 0 / ファイル未存在 / パス・ターゲット不正 / IOException
+        Cmd->>Cmd: エラーログ出力 (_log.LogError / _log.LogCritical)
+        Cmd-->>Engine: AnalysisResult.Halt(errMsg, errorCode)
     end
-    deactivate FS
     deactivate Cmd
 ```
 
@@ -123,5 +121,5 @@ sequenceDiagram
 | :---: | :--- | :--- | :--- | :--- |
 | **1** | 正常系 | 3行あるテストファイルの2行目指定（`LineNumber="2"`） | 2行目の文字列が `<Target>` に格納される | 指定行抽出の基本動作検証 |
 | **2** | 正常系 | 総行数を超える行番号指定（`LineNumber="99"`） | `<Target>` に空文字列 `""` が格納され `Success` 返却 | EOF 超過時の安全空文字返却検証 |
-| **3** | 異常系 | 0以下の行番号指定（`LineNumber="0"`） | エラーログが出力され `Failure` で安全停止する | 不正行番号ガードの検証 |
+| **3** | 異常系 | 0以下の行番号指定（`LineNumber="0"`） | エラーログが出力され `Halt` で安全停止する | 不正行番号ガードの検証 |
 

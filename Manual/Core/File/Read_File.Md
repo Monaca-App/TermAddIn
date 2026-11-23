@@ -22,9 +22,9 @@
 
 | 引数位置 | 引数名 | 説明 | 指定方法 / 有効な入力値 |
 | :--- | :--- | :--- | :--- |
-| 引数1 | FilePath | 読み込む対象ファイルのパス（必須）。 | 相対パス（例: `"./config/init_table.csv"`）または `$PARAM$` 置換 |
-| 引数2 | Target | 読み込んだファイル全文を格納するパラメータキー名（必須）。 | 自コマンド内の `PARAM` キー名（例: `"FILE_BUF"`, `"1"`） |
-| 引数3 | Encoding | 読み込み時の文字エンコーディング名（任意・省略可・既定値: `"UTF-8"`）。 | `"UTF-8"`, `"Shift_JIS"`（または `"CP932"`）, `"ASCII"` |
+| 引数1 | `FilePath` | 読み込む対象ファイルのパス（必須）。 | 相対パス（例: `"./config/init_table.csv"`）または `$PARAM$` 置換 |
+| 引数2 | `Target` | 読み込んだファイル全文を格納するパラメータキー名（必須）。 | 自コマンド内の `PARAM` キー名（例: `"FILE_BUF"`, `"1"`）またはホストレジスタ |
+| 引数3 | `Encoding` | 読み込み時の文字エンコーディング名（任意・省略可・既定値: **`"SJIS"`** ［Shift_JIS / CP932］）。 | `"SJIS"`（`"Shift_JIS"` / `"CP932"`）, `"UTF-8"`, `"UTF8BOM"`, `"ASCII"` 等または `$PARAM$` 置換 |
 
 ---
 
@@ -35,7 +35,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: ファイルパス自体にカンマを含める場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `ReadFile`, `Analysis_Term_ReadFile`
+* **エイリアス（別名）**: `FileRead`, `Gpib_ReadFile`, `Term_ReadFile`, `Analysis_Term_ReadFile`
 
 ---
 
@@ -73,25 +73,24 @@ sequenceDiagram
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "Read_FileCommand"
     participant Resolver as "FilePathResolver"
-    participant FS as "OS ファイルシステム"
-    participant Target as "TargetResolver / パラメータ辞書"
+    participant Target as "TargetResolver (ITargetBuffer)"
+    participant FS as "FileStream / StreamReader"
 
-    Engine->>Cmd: ExecuteAsync(FilePath, Target, Encoding)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
-    Cmd->>Resolver: ResolveRelativePath(FilePath)
-    Resolver-->>Cmd: 解決済みフルパス (ResolvedPath)
-    Cmd->>FS: File.Exists(ResolvedPath) & ReadAllTextAsync
-    activate FS
-    alt ファイルが存在 かつ 読込成功
-        FS-->>Cmd: ファイル全文テキスト (Content)
-        Cmd->>Target: SetTargetValue(Target, Content)
-        Cmd-->>Engine: 実行完了 (Success)
-    else ファイル未存在 または I/O・アクセス権エラー
-        FS-->>Cmd: FileNotFoundException / IOException
-        Cmd->>Cmd: エラーログ出力 (_log.LogError)
-        Cmd-->>Engine: 実行失敗・安全停止 (Halt)
+    Cmd->>Resolver: TryResolvePath(FilePath) ＆ TryResolveEncoding(Encoding)
+    Cmd->>Target: TryResolve(Target, context, out targetBuffer)
+    alt パス・ターゲット・文字コード解決成功 かつ File.Exists(resolvedPath)
+        Cmd->>FS: FileStream(Open, Read, ReadWrite) ＋ StreamReader.ReadToEndAsync()
+        activate FS
+        FS-->>Cmd: ファイル全文テキスト (content)
+        deactivate FS
+        Cmd->>Target: targetBuffer.Value = content
+        Cmd-->>Engine: AnalysisResult.Success(content)
+    else パス・ターゲット未解決 / ファイル未存在 / IOException
+        Cmd->>Cmd: エラーログ出力 (_log.LogError / _log.LogCritical)
+        Cmd-->>Engine: AnalysisResult.Halt(errMsg, errorCode)
     end
-    deactivate FS
     deactivate Cmd
 ```
 
@@ -122,7 +121,7 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 一時テストファイルの読み込み（UTF-8） | ファイル内容が `<Target>` に格納され、テスト後一時ファイルは削除される | ファイル全文読込の基本動作検証 |
-| **2** | 正常系 | 相対パス指定（`"./test_read.txt"`） | `FilePathResolver` により正しくパス解決されて読み込まれる | 相対パス自動解決の検証 |
-| **3** | 異常系 | 存在しないファイルパス（`"./no_such_file.txt"`） | エラーログが出力され `Failure` で安全停止する | ファイル未存在時のクラッシュ防御検証 |
+| **1** | 正常系 | 既定エンコーディング（`"SJIS"`：Shift_JIS / CP932）での一時テストファイル読み込み | ファイル内容が `<Target>` に格納され、テスト後一時ファイルは削除される | 既定文字コード（`"SJIS"`）でのファイル全文読込検証 |
+| **2** | 正常系 | 相対パス指定（`"./test_read.txt"`）および `"UTF-8"` 明示指定 | `FilePathResolver` により正しくパス解決されて読み込まれる | 相対パス自動解決および文字コード指定の検証 |
+| **3** | 異常系 | 存在しないファイルパス（`"./no_such_file.txt"`） | エラーログが出力され `Halt` で安全停止する | ファイル未存在時のクラッシュ防御検証 |
 

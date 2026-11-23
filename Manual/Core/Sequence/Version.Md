@@ -72,13 +72,15 @@ sequenceDiagram
 
     Engine->>Cmd: ExecuteAsync(RequiredVersion, JumpTargetIfNotMet)
     activate Cmd
-    Cmd->>Cmd: 現在アセンブリ Version と RequiredVersion を比較
-    alt 現在バージョン >= 要求バージョン
-        Cmd-->>Engine: 互換性確認完了 (Success)
-    else 現在バージョン < 要求バージョン (JumpTarget 指定あり)
-        Cmd-->>Engine: フォールバック分岐指示 (Jump -> JumpTargetIfNotMet)
-    else 現在バージョン < 要求バージョン (JumpTarget 省略)
-        Cmd-->>Engine: バージョン不適合・安全停止 (Halt)
+    Cmd->>Cmd: マクロ展開後、Version.TryParse で現在バージョンと要求バージョンを解析
+    alt 両方有効なバージョン形式 かつ 現在バージョン < 要求バージョン
+        alt JumpTargetIfNotMet 指定あり
+            Cmd-->>Engine: フォールバック分岐指示 (Jump -> JumpTargetIfNotMet)
+        else JumpTargetIfNotMet 省略
+            Cmd-->>Engine: バージョン不適合・安全停止 (Halt)
+        end
+    else 現在バージョン >= 要求バージョン または パース不能文字列
+        Cmd-->>Engine: 互換性確認通過・次ステップ継続 (Success)
     end
     deactivate Cmd
 ```
@@ -90,9 +92,9 @@ sequenceDiagram
 入力データの異常や実行時エラーに対し、解析・実行エンジンが実行するセーフティ規約です。
 
 1. **旧バージョン環境での未対応コマンド実行防止**:
-   - 要求バージョンに満たない環境では、後続の未対応コマンドが呼ばれる前に `Halt` または代替ラベル分岐で確実に保護します。
-2. **`System.Version.TryParse` による例外非送出パース**:
-   - 万一不正な形式のバージョン文字列が指定された場合でも `FormatException` でクラッシュさせず安全に判定を完了します。
+   - 要求バージョンに満たない環境では、後続の未対応コマンドが呼ばれる前に `Halt` または代替ラベル分岐（`Jump`）で確実に保護します。
+2. **`System.Version.TryParse` による非破壊素通り（`Success`）動作**:
+   - `RequiredVersion`（または現在アセンブリのバージョン文字列）に `System.Version.TryParse` で解析できない不正な形式の文字列が指定された場合は、`FormatException` の送出や `Halt` 停止を行わず、 **`AnalysisResult.Success`（合格素通り）** として次ステップへ安全に進行します。
 
 ---
 
@@ -110,6 +112,6 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 最小要求バージョン `"0.0.1"` を指定して実行 | 現在バージョンが要件を満たし `Status == Success` を返却 | バージョン適合判定の基本動作検証 |
-| **2** | 異常系 | 現行より高いバージョン（`"99.0.0"`）をジャンプ先なしで指定 | `Status == Halt` が返却され安全停止する | バージョン不足時の安全停止検証 |
+| **1** | 正常系 | 最小要求バージョン `("0.0.1")` を指定して実行 | 現在バージョンが要件を満たし `Status == Success` を返却 | バージョン適合判定の基本動作検証 |
+| **2** | 異常系・境界値 | 現行より高いバージョンを `("9999.0.0")` および `("9999.0.0", "#OLD_VER#")` で指定 | 省略時は `Status == Halt`、指定時は `Status == Jump`（`TargetLabel == "#OLD_VER#"`）を返却 | バージョン未達時の安全停止および代替ラベル分岐検証 |
 

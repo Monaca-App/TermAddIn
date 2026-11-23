@@ -1,0 +1,64 @@
+; ==============================================================================
+; Common.Core.Commands Sample: Array ドメイン (全7コマンド網羅)
+; 対象: Array_Init / Array_Set / Array_Get / Array_Split / Array_Join
+;       Array_Replace / Array_Transpose
+; ==============================================================================
+TITLE, "Core Array 2次元配列操作サンプル"
+
+COMMAND, "TABLE_BUILD", "RESULT_DATA"
+,PARAM, DELIM, List, "区切り文字", ",", "\t"
+,PARAM, RESULT_DATA, Range, "構築テーブル結果", ""
+,SEQUENCE, 10, Array_Init, "RESULT_DATA", "3", "3", "$DELIM$"
+,SEQUENCE, 20, Array_Set, "RESULT_DATA", "0", "0", "$DELIM$", "CH"
+,SEQUENCE, 30, Array_Set, "RESULT_DATA", "1", "0", "$DELIM$", "VOLT"
+,SEQUENCE, 40, Array_Set, "RESULT_DATA", "2", "0", "$DELIM$", "JUDGE"
+,SEQUENCE, 50, Array_Set, "RESULT_DATA", "0", "1", "$DELIM$", "CH1"
+,SEQUENCE, 60, Array_Set, "RESULT_DATA", "1", "1", "$DELIM$", "3.30"
+,SEQUENCE, 70, Array_Set, "RESULT_DATA", "2", "1", "$DELIM$", "OK"
+,SEQUENCE, 80, Array_Set, "RESULT_DATA", "0", "2", "$DELIM$", "CH2"
+,SEQUENCE, 90, Array_Set, "RESULT_DATA", "1", "2", "$DELIM$", "5.01"
+,SEQUENCE, 100, Array_Set, "RESULT_DATA", "2", "2", "$DELIM$", "OK"
+,SEQUENCE, 110, Exit
+
+COMMAND, "TABLE_JOIN_REPLACE", "RESULT_DATA"
+,PARAM, OLD_STR, Text, "置換前文字列", "NG"
+,PARAM, NEW_STR, Text, "置換後文字列", "PASS"
+,PARAM, RESULT_DATA, Range, "結合・置換結果", ""
+,SEQUENCE, 10, Array_Init, "RESULT_DATA", "2", "2", ","
+,SEQUENCE, 20, Array_Set, "RESULT_DATA", "0", "0", ",", "ITEM1"
+,SEQUENCE, 30, Array_Set, "RESULT_DATA", "1", "0", ",", "NG"
+,SEQUENCE, 40, Array_Set, "RESULT_DATA", "0", "1", ",", "ITEM2"
+,SEQUENCE, 50, Array_Set, "RESULT_DATA", "1", "1", ",", "OK"
+,SEQUENCE, 60, Array_Join, "RESULT_DATA", "NOTE1\r\nNOTE2", ","
+,SEQUENCE, 70, Array_Replace, "RESULT_DATA", "$OLD_STR$", "$NEW_STR$"
+,SEQUENCE, 80, Exit
+
+COMMAND, "TABLE_SLICE_GET", "RESULT_DATA"
+,PARAM, SRC_TBL, Work, "元テーブル", ""
+,PARAM, SUB_TBL, Work, "切出テーブル", ""
+,PARAM, TARGET_X, Text, "取得列X(0始まり)", "0"
+,PARAM, TARGET_Y, Text, "取得行Y(0始まり)", "0"
+,PARAM, RESULT_DATA, Text, "抽出セル値", ""
+,SEQUENCE, 10, Array_Init, "SRC_TBL", "3", "2", ","
+,SEQUENCE, 20, Array_Set, "SRC_TBL", "0", "0", ",", "A1"
+,SEQUENCE, 30, Array_Set, "SRC_TBL", "1", "0", ",", "B1"
+,SEQUENCE, 40, Array_Set, "SRC_TBL", "2", "0", ",", "C1"
+,SEQUENCE, 50, Array_Set, "SRC_TBL", "0", "1", ",", "A2"
+,SEQUENCE, 60, Array_Set, "SRC_TBL", "1", "1", ",", "B2"
+,SEQUENCE, 70, Array_Set, "SRC_TBL", "2", "1", ",", "C2"
+,SEQUENCE, 80, Array_Split, "SUB_TBL", "SRC_TBL", "1", "0", ","
+,SEQUENCE, 90, Array_Get, "SUB_TBL", "$TARGET_X$", "$TARGET_Y$", ",", "RESULT_DATA"
+,SEQUENCE, 100, Exit
+
+COMMAND, "TABLE_TRANSPOSE", "RESULT_DATA"
+,PARAM, SRC_TBL, Work, "元テーブル", ""
+,PARAM, RESULT_DATA, Range, "転置結果テーブル", ""
+,SEQUENCE, 10, Array_Init, "SRC_TBL", "3", "2", ","
+,SEQUENCE, 20, Array_Set, "SRC_TBL", "0", "0", ",", "R1C1"
+,SEQUENCE, 30, Array_Set, "SRC_TBL", "1", "0", ",", "R1C2"
+,SEQUENCE, 40, Array_Set, "SRC_TBL", "2", "0", ",", "R1C3"
+,SEQUENCE, 50, Array_Set, "SRC_TBL", "0", "1", ",", "R2C1"
+,SEQUENCE, 60, Array_Set, "SRC_TBL", "1", "1", ",", "R2C2"
+,SEQUENCE, 70, Array_Set, "SRC_TBL", "2", "1", ",", "R2C3"
+,SEQUENCE, 80, Array_Transpose, "SRC_TBL", "RESULT_DATA", ","
+,SEQUENCE, 90, Exit

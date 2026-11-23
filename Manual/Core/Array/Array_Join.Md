@@ -35,7 +35,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: 引数 3 にカンマを指定する場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `ArrayJoin`, `Analysis_Term_Array_Join`
+* **エイリアス（別名）**: `Gpib_Array_Join`, `Term_Array_Join`, `Analysis_Term_Array_Join`
 
 ---
 
@@ -47,16 +47,21 @@
 
 ```csv
 COMMAND, "MERGE_COLUMNS", "BASE_TBL"
-,PARAM, "BASE_TBL", Text, "ベース表", "CH1\r\nCH2"
-,PARAM, "NEW_COL", Text, "追加測定列", "5.01\r\n4.99"
-; BASE_TBL の各行末に NEW_COL の各行をカンマ区切りで水平結合
-,SEQUENCE, 010, Array_Join, "BASE_TBL", "$NEW_COL$", ","
+,PARAM, "BASE_TBL", Work, "ベース表", ""
+,PARAM, "NEW_COL", Work, "追加測定列", ""
+; 1. BASE_TBL (1列×2行: "CH1" / "CH2") と NEW_COL (1列×2行: "5.01" / "4.99") を構築
+,SEQUENCE, 010, Array_Set, "BASE_TBL", 0, 0, ",", "CH1"
+,SEQUENCE, 020, Array_Set, "BASE_TBL", 0, 1, ",", "CH2"
+,SEQUENCE, 030, Array_Set, "NEW_COL", 0, 0, ",", "5.01"
+,SEQUENCE, 040, Array_Set, "NEW_COL", 0, 1, ",", "4.99"
+; 2. BASE_TBL の各行末に NEW_COL の各行をカンマ区切りで水平結合
+,SEQUENCE, 050, Array_Join, "BASE_TBL", "$NEW_COL$", ","
 ```
 
 ### 実行時の挙動・変数変化
 
-* **実行前の状態**: `"BASE_TBL"` が `"CH1\r\nCH2"`（1 列×2 行）、`"NEW_COL"` が `"5.01\r\n4.99"`（1 列×2 行）の状態。
-* **実行後の状態**: ステップ `010` の `Array_Join` 実行により、各行が水平連結され、`"BASE_TBL"` が `"CH1,5.01\r\nCH2,4.99"`（2 列×2 行）に更新されます。
+* **実行前の状態**: ステップ `010`〜`040` により `"BASE_TBL"` が `"CH1\r\nCH2"`（1 列×2 行）、`"NEW_COL"` が `"5.01\r\n4.99"`（1 列×2 行）に構築された状態。
+* **実行後の状態**: ステップ `050` の `Array_Join` 実行により、各行が水平連結され、`"BASE_TBL"` が `"CH1,5.01\r\nCH2,4.99"`（2 列×2 行）に更新されます。
 
 ---
 
@@ -69,26 +74,24 @@ sequenceDiagram
     autonumber
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "Array_JoinCommand"
-    participant Target as "TargetResolver / パラメータ辞書"
+    participant Target as "TargetResolver / ArrayStorage"
     participant Buffer as "TableBuffer (2次元テーブル処理)"
 
-    Engine->>Cmd: ExecuteAsync(TargetKey, Data, Delimiter)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
-    Cmd->>Target: GetTargetValue(TargetKey)
-    alt 対象キーが定義済みの場合
-        Target-->>Cmd: ベーステーブル文字列 (BaseText)
-        Cmd->>Cmd: 追加データ文字列解決 (AppendText)
-        Cmd->>Buffer: JoinColumnsHorizontally(BaseText, AppendText, Delimiter)
+    Cmd->>Target: TryResolve(TargetKey, context, out targetBuffer)
+    alt 対象キーが解決済み かつ Data / Delimiter の展開成功
+        Target-->>Cmd: targetBuffer.Value ＆ appendText 解決
+        Cmd->>Buffer: JoinColumnsHorizontally(targetBuffer.Value, appendText, delimiter)
         activate Buffer
         Buffer->>Buffer: 行数比較・不足行の空セル自動補填 (Auto-Resize)
-        Buffer-->>Cmd: 水平結合後のテーブル文字列
+        Buffer-->>Cmd: 水平結合後のテーブル文字列 mergedText
         deactivate Buffer
-        Cmd->>Target: SetTargetValue(TargetKey, MergedTableText)
-        Cmd-->>Engine: 実行完了 (Success)
-    else 未定義キー指定
-        Target-->>Cmd: 未定義キーエラー
+        Cmd->>Target: targetBuffer.Value = mergedText ＆ ArrayStorage.SetTable(Key, TableBuffer.Parse(...))
+        Cmd-->>Engine: AnalysisResult.Success(...)
+    else 未定義キー指定 または マクロ展開エラー
         Cmd->>Cmd: エラーログ出力 (_log.LogError)
-        Cmd-->>Engine: 実行失敗・安全停止 (Halt)
+        Cmd-->>Engine: AnalysisResult.Halt(errMsg, errorCode)
     end
     deactivate Cmd
 ```
@@ -120,7 +123,7 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 同行数テーブルの水平結合（`"A\r\nB"` + `"1\r\n2"`） | `"A,1\r\nB,2"` に更新される | 基本的な行末列結合の検証 |
-| **2** | 正常系 | 追加データ側が行数過多の場合（1行ベース + 2行追加） | ベース2行目が空セル補完され2行テーブルとして結合される | 自動行拡張マージ（Auto-Resize）の検証 |
-| **3** | 異常系 | 未定義の `<TargetKey>` を指定 | エラーログが出力され `Failure` で安全停止する | 未定義キーアクセス防御の検証 |
+| **1** | 正常系 | 同行数テーブルの水平結合（`"BASE_TBL" = "CH1\r\nCH2"`, `"NEW_COL" = "5.01\r\n4.99"` に対し `("BASE_TBL", "$NEW_COL$", ",")` を実行） | `"BASE_TBL"` が `"CH1,5.01\r\nCH2,4.99"` に更新され `Success` が返る | 基本的な行末列結合および `$PARAM$` 展開の検証 |
+| **2** | 正常系 | 追加データ側が行数過多の場合の結合（`"SHORT_TBL" = "ROW0"` に対し `("SHORT_TBL", "10\r\n20", ",")` を実行） | ベース 2 行目が空セル補完され `"SHORT_TBL"` が `"ROW0,10\r\n,20"` に更新される | 自動行拡張マージ（Auto-Resize）の検証 |
+| **3** | 異常系 | 未定義の `<TargetKey>` を指定 `("UNDEFINED_TBL", "1\r\n2", ",")` | エラーログが出力され `Halt` で安全停止する | 未定義キーアクセス防御の検証 |
 

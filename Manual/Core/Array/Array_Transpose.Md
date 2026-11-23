@@ -35,7 +35,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: 引数 3 にカンマを指定する場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `ArrayTranspose`, `Transpose`
+* **エイリアス（別名）**: `Transpose`, `Gpib_Array_Transpose`, `Term_Array_Transpose`, `Analysis_Term_Array_Transpose`
 
 ---
 
@@ -47,16 +47,23 @@
 
 ```csv
 COMMAND, "TRANSPOSE_REPORT", "TRANSPOSED_TBL"
-,PARAM, "RAW_TBL", Text, "元テーブル(3列×2行)", "CH1,CH2,CH3\r\n5.0,3.3,1.8"
+,PARAM, "RAW_TBL", Work, "元テーブル(3列×2行)", ""
 ,PARAM, "TRANSPOSED_TBL", Work, "転置後テーブル(2列×3行)", ""
-; RAW_TBL の行と列を転置し、TRANSPOSED_TBL へ格納
-,SEQUENCE, 010, Array_Transpose, "RAW_TBL", "TRANSPOSED_TBL", ","
+; 1. 3列×2行テーブル ("CH1,CH2,CH3\r\n5.0,3.3,1.8") を構築
+,SEQUENCE, 010, Array_Set, "RAW_TBL", 0, 0, ",", "CH1"
+,SEQUENCE, 020, Array_Set, "RAW_TBL", 1, 0, ",", "CH2"
+,SEQUENCE, 030, Array_Set, "RAW_TBL", 2, 0, ",", "CH3"
+,SEQUENCE, 040, Array_Set, "RAW_TBL", 0, 1, ",", "5.0"
+,SEQUENCE, 050, Array_Set, "RAW_TBL", 1, 1, ",", "3.3"
+,SEQUENCE, 060, Array_Set, "RAW_TBL", 2, 1, ",", "1.8"
+; 2. RAW_TBL の行と列を転置し、TRANSPOSED_TBL へ格納
+,SEQUENCE, 070, Array_Transpose, "RAW_TBL", "TRANSPOSED_TBL", ","
 ```
 
 ### 実行時の挙動・変数変化
 
-* **実行前の状態**: `"RAW_TBL"` が `"CH1,CH2,CH3\r\n5.0,3.3,1.8"`（3 列×2 行）の状態。
-* **実行後の状態**: ステップ `010` の `Array_Transpose` 実行により、行と列が入れ替わり、`"TRANSPOSED_TBL"` に `"CH1,5.0\r\nCH2,3.3\r\nCH3,1.8"`（2 列×3 行）が格納されます。
+* **実行前の状態**: ステップ `010`〜`060` により `"RAW_TBL"` が `"CH1,CH2,CH3\r\n5.0,3.3,1.8"`（3 列×2 行）に構築された状態。
+* **実行後の状態**: ステップ `070` の `Array_Transpose` 実行により、行と列が入れ替わり、`"TRANSPOSED_TBL"` に `"CH1,5.0\r\nCH2,3.3\r\nCH3,1.8"`（2 列×3 行）が格納されます。
 
 ---
 
@@ -69,26 +76,25 @@ sequenceDiagram
     autonumber
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "Array_TransposeCommand"
-    participant Target as "TargetResolver / パラメータ辞書"
+    participant Target as "TargetResolver / ArrayStorage"
     participant Buffer as "TableBuffer (2次元テーブル処理)"
 
-    Engine->>Cmd: ExecuteAsync(Target, DstTarget, Delimiter)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
-    Cmd->>Target: GetTargetValue(Target)
-    alt 対象キーが定義済みの場合
-        Target-->>Cmd: 元テーブル文字列
-        Cmd->>Buffer: TransposeTable(SourceText, Delimiter)
+    Cmd->>Target: TryResolve(Target, out sourceBuffer) ＆ DstTarget 解決 (省略時は dstBuffer = sourceBuffer)
+    alt 対象キーが解決済み かつ Delimiter 展開成功
+        Target-->>Cmd: sourceBuffer.Value
+        Cmd->>Buffer: TransposeTable(sourceBuffer.Value, delimiter)
         activate Buffer
         Buffer->>Buffer: 最大列数算出・不揃い行の空セル正規化
-        Buffer->>Buffer: Grid[y][x] から Grid[x][y] へ転置再構築
-        Buffer-->>Cmd: 転置後のテーブル文字列
+        Buffer->>Buffer: grid[y][x] から転置行配列へ再構築
+        Buffer-->>Cmd: 転置後のテーブル文字列 transposedText
         deactivate Buffer
-        Cmd->>Target: SetTargetValue(DstTarget ?? Target, TransposedText)
-        Cmd-->>Engine: 実行完了 (Success)
-    else 未定義キー指定
-        Target-->>Cmd: 未定義キーエラー
+        Cmd->>Target: dstBuffer.Value = transposedText ＆ ArrayStorage.SetTable(dstBuffer.Key, TableBuffer.Parse(...))
+        Cmd-->>Engine: AnalysisResult.Success(...)
+    else 未定義キー指定 または 展開エラー
         Cmd->>Cmd: エラーログ出力 (_log.LogError)
-        Cmd-->>Engine: 実行失敗・安全停止 (Halt)
+        Cmd-->>Engine: AnalysisResult.Halt(errMsg, errorCode)
     end
     deactivate Cmd
 ```
@@ -120,8 +126,8 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 3列×2行テーブルの転置（`"A,B,C\r\n1,2,3"`） | `"A,1\r\nB,2\r\nC,3"`（2列×3行）が出力される | 行列転置の基本動作検証 |
-| **2** | 正常系 | `<DstTarget>` 省略時のインプレース転置 | `<Target>` 自身が転置後のテーブルで上書きされる | 省略時インプレース更新の検証 |
-| **3** | 正常系 | 列数が不揃いな行を含むテーブルの転置 | 不足セルが空文字補完されてクラッシュせず転置される | ジャグ配列に対する安全正規化の検証 |
-| **4** | 異常系 | 未定義の `<Target>` キーを指定して実行 | エラーログが出力され `Halt` で安全停止する | 未定義キーアクセス防御の検証 |
+| **1** | 正常系 | 3 列×2 行テーブル `"RAW_TBL" = "CH1,CH2,CH3\r\n5.0,3.3,1.8"` を別パラメータへ転置 `("RAW_TBL", "TRANSPOSED_TBL", ",")` | `"TRANSPOSED_TBL"` に `"CH1,5.0\r\nCH2,3.3\r\nCH3,1.8"`（2 列×3 行）が格納され `Success` が返る | 行列転置および別ターゲット出力の基本動作検証 |
+| **2** | 正常系 | `"RAW_TBL"` に対し `<DstTarget>` 省略でインプレース転置 `("RAW_TBL")` を実行 | `"RAW_TBL"` 自身が `"CH1,5.0\r\nCH2,3.3\r\nCH3,1.8"` で上書き更新される | 省略時インプレース更新の検証 |
+| **3** | 正常系 | 列数が不揃いなジャグテーブル `"JAGGED_TBL" = "A,B,C\r\n1"` に対し `("JAGGED_TBL", "", ",")` を実行 | 不足セルが空文字補完されて `"JAGGED_TBL"` が `"A,1\r\nB,\r\nC,"` に転置される | ジャグ配列に対する安全正規化の検証 |
+| **4** | 異常系 | 未定義の `<Target>` キーを指定 `("UNDEFINED_TBL")` | エラーログが出力され `Halt` で安全停止する | 未定義キーアクセス防御の検証 |
 

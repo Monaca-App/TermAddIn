@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="460" viewBox="0 0 960 460">
+  <defs>
+    <filter id="winShadow" x="-3%" y="-3%" width="106%" height="110%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.14" />
+    </filter>
+    <style>
+      .ui { font-family: 'Yu Gothic UI', 'Meiryo UI', 'Segoe UI', sans-serif; }
+      .mono { font-family: 'Consolas', 'BIZ UDGothic', monospace; }
+      .badge-circle { fill: #E8590C; stroke: #FFFFFF; stroke-width: 2; }
+      .badge-num { font-family: 'Segoe UI', 'Yu Gothic UI', sans-serif; font-size: 12px; font-weight: 700; fill: #FFFFFF; text-anchor: middle; dominant-baseline: central; }
+      .th { font-family: 'Yu Gothic UI', 'Meiryo UI', sans-serif; font-size: 11px; font-weight: 700; fill: #334155; }
+      .td { font-family: 'Yu Gothic UI', 'Meiryo UI', sans-serif; font-size: 11px; fill: #1E293B; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="960" height="460" fill="#F8FAFC" rx="10" />
+
+  <g filter="url(#winShadow)">
+    <rect x="20" y="18" width="920" height="424" rx="7" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.2" />
+  </g>
+
+  <!-- タブヘッダ -->
+  <rect x="21" y="19" width="918" height="30" fill="#F1F5F9" />
+  <text x="95" y="38" class="ui" font-size="11.5" fill="#64748B" text-anchor="middle">概要・コマンド集計</text>
+  <rect x="166" y="21" width="160" height="28" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text x="246" y="39" class="ui" font-size="11.5" font-weight="700" fill="#1E3A8A" text-anchor="middle">トレース一覧・タイムライン</text>
+  <text x="372" y="38" class="ui" font-size="11.5" fill="#64748B" text-anchor="middle">構造化ログ</text>
+  <text x="456" y="38" class="ui" font-size="11.5" fill="#64748B" text-anchor="middle">メトリクス</text>
+
+  <!-- ① 上段: スパン一覧テーブル -->
+  <rect x="32" y="58" width="896" height="136" fill="#FFFFFF" stroke="#CBD5E1" />
+  <rect x="33" y="59" width="894" height="25" fill="#E2E8F0" />
+  <text x="42" y="75" class="th">開始時刻</text>
+  <text x="190" y="75" class="th">スパン名</text>
+  <text x="392" y="75" class="th">種別</text>
+  <text x="458" y="75" class="th">所要時間(ms)</text>
+  <text x="548" y="75" class="th">ステータス</text>
+  <text x="630" y="75" class="th">詳細説明</text>
+  <text x="760" y="75" class="th">TraceId</text>
+
+  <rect x="33" y="84" width="894" height="26" fill="#FFFFFF" />
+  <text x="42" y="101" class="mono" font-size="10.5" fill="#334155">2026/11/23 09:05:10.100</text>
+  <text x="190" y="101" class="td">Sequence:MeasSequence</text>
+  <text x="392" y="101" class="td">INTERNAL</text>
+  <text x="466" y="101" class="td">181.110</text>
+  <text x="556" y="101" class="td">OK</text>
+  <text x="760" y="101" class="mono" font-size="10.5" fill="#475569">4bf92f3577b34da6...</text>
+
+  <rect x="33" y="110" width="894" height="26" fill="#FEE2E2" />
+  <text x="42" y="127" class="mono" font-size="10.5" fill="#991B1B">2026/11/23 09:05:10.115</text>
+  <text x="190" y="127" class="td" font-weight="700" fill="#991B1B">Step 20:Com_WaitPrompt</text>
+  <text x="392" y="127" class="td" fill="#991B1B">CLIENT</text>
+  <text x="466" y="127" class="td" fill="#991B1B">160.200</text>
+  <text x="556" y="127" class="td" font-weight="700" fill="#B91C1C">ERROR</text>
+  <text x="630" y="127" class="td" fill="#991B1B">Prompt Timeout</text>
+  <text x="760" y="127" class="mono" font-size="10.5" fill="#991B1B">4bf92f3577b34da6...</text>
+
+  <rect x="33" y="136" width="894" height="26" fill="#F8FAFC" />
+  <text x="42" y="153" class="mono" font-size="10.5" fill="#334155">2026/11/23 09:05:10.105</text>
+  <text x="190" y="153" class="td">Step 10:Com_Send</text>
+  <text x="392" y="153" class="td">CLIENT</text>
+  <text x="466" y="153" class="td">4.010</text>
+  <text x="556" y="153" class="td">OK</text>
+  <text x="760" y="153" class="mono" font-size="10.5" fill="#475569">4bf92f3577b34da6...</text>
+
+  <rect x="33" y="162" width="894" height="26" fill="#FFFFFF" />
+  <text x="42" y="179" class="mono" font-size="10.5" fill="#334155">2026/11/23 09:05:10.278</text>
+  <text x="190" y="179" class="td">Step 30:Time_Stamp</text>
+  <text x="392" y="179" class="td">INTERNAL</text>
+  <text x="466" y="179" class="td">1.000</text>
+  <text x="556" y="179" class="td">OK</text>
+  <text x="760" y="179" class="mono" font-size="10.5" fill="#475569">4bf92f3577b34da6...</text>
+
+  <!-- ② 下段左: ウォーターフォールタイムライン -->
+  <rect x="32" y="204" width="568" height="224" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text x="44" y="224" class="ui" font-size="11.5" font-weight="700" fill="#1E293B">トレース タイムライン  TraceId: 4bf92f3577b34da6... (4 スパン)</text>
+
+  <!-- 縦グリッド -->
+  <line x1="230" y1="236" x2="230" y2="404" stroke="#E2E8F0" />
+  <line x1="310" y1="236" x2="310" y2="404" stroke="#E2E8F0" />
+  <line x1="390" y1="236" x2="390" y2="404" stroke="#E2E8F0" />
+  <line x1="470" y1="236" x2="470" y2="404" stroke="#E2E8F0" />
+  <line x1="550" y1="236" x2="550" y2="404" stroke="#E2E8F0" />
+
+  <!-- Row 1 -->
+  <text x="44" y="256" class="ui" font-size="11" fill="#1E293B">Sequence:MeasSequence</text>
+  <rect x="230" y="244" width="320" height="14" rx="2" fill="#3E8ED0" />
+  <text x="556" y="255" class="ui" font-size="10" fill="#64748B">181.1ms</text>
+
+  <!-- Row 2 -->
+  <text x="56" y="284" class="ui" font-size="11" fill="#1E293B">└ Step 10:Com_Send</text>
+  <rect x="238" y="272" width="12" height="14" rx="2" fill="#3E8ED0" />
+  <text x="256" y="283" class="ui" font-size="10" fill="#64748B">4.0ms</text>
+
+  <!-- Row 3 (Selected Error) -->
+  <rect x="33" y="294" width="566" height="26" fill="#EBF4FF" />
+  <text x="56" y="311" class="ui" font-size="11" font-weight="700" fill="#991B1B">└ Step 20:Com_WaitPrompt</text>
+  <rect x="256" y="300" width="280" height="14" rx="2" fill="#D74848" />
+  <text x="542" y="311" class="ui" font-size="10" fill="#991B1B">160.2ms</text>
+
+  <!-- Row 4 -->
+  <text x="56" y="339" class="ui" font-size="11" fill="#1E293B">└ Step 30:Time_Stamp</text>
+  <rect x="540" y="327" width="8" height="14" rx="2" fill="#3E8ED0" />
+  <text x="554" y="338" class="ui" font-size="10" fill="#64748B">1.0ms</text>
+
+  <!-- 時間軸目盛り -->
+  <text x="220" y="420" class="ui" font-size="10" fill="#64748B">0.0ms</text>
+  <text x="300" y="420" class="ui" font-size="10" fill="#64748B">45.3ms</text>
+  <text x="380" y="420" class="ui" font-size="10" fill="#64748B">90.6ms</text>
+  <text x="460" y="420" class="ui" font-size="10" fill="#64748B">135.8ms</text>
+  <text x="536" y="420" class="ui" font-size="10" fill="#64748B">181.1ms</text>
+
+  <!-- ③ 下段右: 詳細インスペクタ + ログ遷移ボタン -->
+  <rect x="610" y="204" width="318" height="224" fill="#FAFBFD" stroke="#CBD5E1" />
+  <rect x="611" y="205" width="316" height="28" fill="#EFF6FF" stroke="#93C5FD" />
+  <text x="769" y="223" class="ui" font-size="11.5" font-weight="700" fill="#1E40AF" text-anchor="middle">この TraceId のログを表示</text>
+
+  <text x="622" y="252" class="mono" font-size="10.5" fill="#1E293B">Name     : Step 20:Com_WaitPrompt</text>
+  <text x="622" y="269" class="mono" font-size="10.5" fill="#B91C1C">Status   : ERROR (Prompt Timeout)</text>
+  <text x="622" y="286" class="mono" font-size="10.5" fill="#1E293B">Duration : 160.200 ms</text>
+  <text x="622" y="303" class="mono" font-size="10.5" fill="#475569">TraceId  : 4bf92f3577b34da6...</text>
+  <text x="622" y="328" class="mono" font-size="10.5" font-weight="700" fill="#334155">[Attributes]</text>
+  <text x="622" y="346" class="mono" font-size="10.5" fill="#334155">  command.name = Com_WaitPrompt</text>
+  <text x="622" y="363" class="mono" font-size="10.5" fill="#334155">  timeout.ms   = 5000</text>
+  <text x="622" y="388" class="mono" font-size="10.5" font-weight="700" fill="#334155">[Events (1)]</text>
+  <text x="622" y="406" class="mono" font-size="10.5" fill="#991B1B">  [09:05:10.275] exception.timeout</text>
+
+  <!-- コールアウト番号バッジ ①〜③ -->
+  <g transform="translate(918, 66)"><circle r="11" class="badge-circle" /><text class="badge-num">1</text></g>
+  <g transform="translate(588, 214)"><circle r="11" class="badge-circle" /><text class="badge-num">2</text></g>
+  <g transform="translate(918, 214)"><circle r="11" class="badge-circle" /><text class="badge-num">3</text></g>
+</svg>

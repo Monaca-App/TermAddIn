@@ -1,0 +1,221 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="620" viewBox="0 0 960 620">
+  <defs>
+    <filter id="winShadow" x="-3%" y="-3%" width="106%" height="110%">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#0F172A" flood-opacity="0.16" />
+    </filter>
+    <linearGradient id="winTitle" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1E3A8A" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+    <style>
+      .ui { font-family: 'Yu Gothic UI', 'Meiryo UI', 'Segoe UI', sans-serif; }
+      .mono { font-family: 'Consolas', 'BIZ UDGothic', monospace; }
+      .badge-circle { fill: #E8590C; stroke: #FFFFFF; stroke-width: 2; }
+      .badge-num { font-family: 'Segoe UI', 'Yu Gothic UI', sans-serif; font-size: 12px; font-weight: 700; fill: #FFFFFF; text-anchor: middle; dominant-baseline: central; }
+      .btn { fill: #FFFFFF; stroke: #CBD5E1; stroke-width: 1; rx: 4; }
+      .btn-txt { font-family: 'Yu Gothic UI', 'Meiryo UI', sans-serif; font-size: 11px; fill: #1E293B; text-anchor: middle; }
+      .th { font-family: 'Yu Gothic UI', 'Meiryo UI', sans-serif; font-size: 11px; font-weight: 700; fill: #334155; }
+      .td { font-family: 'Yu Gothic UI', 'Meiryo UI', sans-serif; font-size: 11px; fill: #1E293B; }
+      .kpi-lbl { font-family: 'Yu Gothic UI', 'Meiryo UI', sans-serif; font-size: 10.5px; fill: #64748B; }
+      .kpi-val { font-family: 'Yu Gothic UI', 'Meiryo UI', sans-serif; font-size: 15px; font-weight: 700; fill: #1E293B; }
+    </style>
+  </defs>
+
+  <!-- 背景キャンバス -->
+  <rect x="0" y="0" width="960" height="620" fill="#F8FAFC" rx="10" />
+
+  <!-- メインウィンドウ本体 -->
+  <g filter="url(#winShadow)">
+    <rect x="20" y="18" width="920" height="584" rx="8" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.3" />
+    <path d="M 20 26 Q 20 18 28 18 L 932 18 Q 940 18 940 26 L 940 48 L 20 48 Z" fill="url(#winTitle)" />
+  </g>
+
+  <!-- タイトルバー -->
+  <rect x="32" y="25" width="16" height="16" rx="3" fill="#FFFFFF" opacity="0.9" />
+  <rect x="35" y="33" width="3" height="6" fill="#2563EB" />
+  <rect x="39" y="29" width="3" height="10" fill="#16A34A" />
+  <rect x="43" y="31" width="3" height="8" fill="#E8590C" />
+  <text x="56" y="37" class="ui" font-size="12.5" font-weight="700" fill="#FFFFFF">Monaca Telemetry Analyzer — テレメトリ分析ツール</text>
+  <text x="900" y="37" class="ui" font-size="12" fill="#E2E8F0">─  □  ✕</text>
+
+  <!-- ① 上部ツールバー（フォルダ・操作ボタン） -->
+  <rect x="21" y="48" width="918" height="72" fill="#F1F5F9" />
+  <text x="34" y="69" class="ui" font-size="11.5" fill="#334155">対象フォルダ:</text>
+  <rect x="112" y="54" width="440" height="24" rx="3" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text x="120" y="70" class="mono" font-size="11" fill="#1E293B">C:\Users\user\Desktop\Monaca\telemetry</text>
+
+  <rect x="560" y="54" width="94" height="24" class="btn" />
+  <text x="607" y="70" class="btn-txt">フォルダ選択...</text>
+  <rect x="660" y="54" width="84" height="24" class="btn" />
+  <text x="702" y="70" class="btn-txt">再読込 (F5)</text>
+  <rect x="750" y="54" width="82" height="24" class="btn" />
+  <text x="791" y="70" class="btn-txt">CSV 出力...</text>
+  <rect x="842" y="60" width="12" height="12" rx="2" fill="#FFFFFF" stroke="#64748B" />
+  <text x="860" y="70" class="ui" font-size="11" fill="#334155">自動更新(3秒)</text>
+
+  <!-- ② 検索 / TraceId ＆ フィルタ行 -->
+  <text x="34" y="104" class="ui" font-size="11.5" fill="#334155">検索 / TraceId:</text>
+  <rect x="112" y="88" width="270" height="24" rx="3" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text x="120" y="104" class="ui" font-size="11" fill="#94A3B8">コマンド名・TraceId・キーワードを入力...</text>
+
+  <text x="396" y="104" class="ui" font-size="11.5" fill="#334155">フィルタ:</text>
+  <rect x="448" y="88" width="146" height="24" rx="3" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text x="456" y="104" class="ui" font-size="11" fill="#1E293B">すべて表示</text>
+  <text x="580" y="104" class="ui" font-size="10" fill="#64748B">▼</text>
+
+  <rect x="604" y="88" width="86" height="24" class="btn" />
+  <text x="647" y="104" class="btn-txt">フィルタ解除</text>
+
+  <!-- ③ KPI サマリーカード 4 枚 -->
+  <rect x="21" y="120" width="918" height="76" fill="#F1F5F9" />
+  <!-- Card 1 -->
+  <rect x="32" y="126" width="218" height="62" rx="5" fill="#FFFFFF" stroke="#CBD5E1" />
+  <rect x="32" y="126" width="5" height="62" rx="2" fill="#1E5AA0" />
+  <text x="46" y="144" class="kpi-lbl">総スパン数 (Traces)</text>
+  <text x="46" y="172" class="kpi-val">128 件</text>
+
+  <!-- Card 2 -->
+  <rect x="258" y="126" width="218" height="62" rx="5" fill="#FFFFFF" stroke="#CBD5E1" />
+  <rect x="258" y="126" width="5" height="62" rx="2" fill="#BE3232" />
+  <text x="272" y="144" class="kpi-lbl">エラー件数 / エラー率</text>
+  <text x="272" y="172" class="kpi-val" fill="#B91C1C">3 件 (2.3%)</text>
+
+  <!-- Card 3 -->
+  <rect x="484" y="126" width="218" height="62" rx="5" fill="#FFFFFF" stroke="#CBD5E1" />
+  <rect x="484" y="126" width="5" height="62" rx="2" fill="#1E7850" />
+  <text x="498" y="144" class="kpi-lbl">所要時間 (平均 / P95 / 最大)</text>
+  <text x="498" y="172" class="kpi-val">26.8 / 123.7 / 181.1 ms</text>
+
+  <!-- Card 4 -->
+  <rect x="710" y="126" width="218" height="62" rx="5" fill="#FFFFFF" stroke="#CBD5E1" />
+  <rect x="710" y="126" width="5" height="62" rx="2" fill="#5A4696" />
+  <text x="724" y="144" class="kpi-lbl">構造化ログ / メトリクス</text>
+  <text x="724" y="172" class="kpi-val">322 / 14</text>
+
+  <!-- ④ タブバー -->
+  <line x1="21" y1="226" x2="939" y2="226" stroke="#CBD5E1" />
+  <path d="M 32 226 L 32 203 Q 32 200 35 200 L 165 200 Q 168 200 168 203 L 168 226 Z" fill="#FFFFFF" stroke="#CBD5E1" />
+  <line x1="33" y1="226" x2="167" y2="226" stroke="#FFFFFF" stroke-width="2" />
+  <text x="100" y="217" class="ui" font-size="11.5" font-weight="700" fill="#1E3A8A" text-anchor="middle">概要・コマンド集計</text>
+
+  <rect x="172" y="202" width="156" height="24" fill="#F1F5F9" stroke="#CBD5E1" />
+  <text x="250" y="218" class="ui" font-size="11.5" fill="#475569" text-anchor="middle">トレース一覧・タイムライン</text>
+
+  <rect x="332" y="202" width="90" height="24" fill="#F1F5F9" stroke="#CBD5E1" />
+  <text x="377" y="218" class="ui" font-size="11.5" fill="#475569" text-anchor="middle">構造化ログ</text>
+
+  <rect x="426" y="202" width="84" height="24" fill="#F1F5F9" stroke="#CBD5E1" />
+  <text x="468" y="218" class="ui" font-size="11.5" fill="#475569" text-anchor="middle">メトリクス</text>
+
+  <!-- ⑤ コマンド別集計テーブル -->
+  <rect x="32" y="234" width="896" height="146" fill="#FFFFFF" stroke="#CBD5E1" />
+  <rect x="33" y="235" width="894" height="26" fill="#E2E8F0" />
+  <text x="44" y="252" class="th">コマンド / スパン名</text>
+  <text x="275" y="252" class="th">回数</text>
+  <text x="330" y="252" class="th">成功</text>
+  <text x="385" y="252" class="th">エラー</text>
+  <text x="442" y="252" class="th">エラー率(%)</text>
+  <text x="530" y="252" class="th">平均(ms)</text>
+  <text x="608" y="252" class="th">最小(ms)</text>
+  <text x="686" y="252" class="th">P95(ms)</text>
+  <text x="762" y="252" class="th">最大(ms)</text>
+  <text x="840" y="252" class="th">合計(ms)</text>
+
+  <!-- Row 1 (Selected) -->
+  <rect x="33" y="261" width="894" height="26" fill="#DBEAFE" />
+  <text x="44" y="278" class="td" font-weight="700">Sequence:MeasSequence</text>
+  <text x="278" y="278" class="td">10</text>
+  <text x="333" y="278" class="td">10</text>
+  <text x="392" y="278" class="td">0</text>
+  <text x="456" y="278" class="td">0.0</text>
+  <text x="534" y="278" class="td">99.06</text>
+  <text x="612" y="278" class="td">17.01</text>
+  <text x="688" y="278" class="td">172.90</text>
+  <text x="764" y="278" class="td">181.11</text>
+  <text x="842" y="278" class="td">990.60</text>
+
+  <!-- Row 2 (Error Highlight) -->
+  <rect x="33" y="287" width="894" height="26" fill="#FEE2E2" />
+  <text x="44" y="304" class="td" fill="#991B1B">Step 20:Com_WaitPrompt</text>
+  <text x="278" y="304" class="td">40</text>
+  <text x="333" y="304" class="td">37</text>
+  <text x="392" y="304" class="td" font-weight="700" fill="#B91C1C">3</text>
+  <text x="456" y="304" class="td" font-weight="700" fill="#B91C1C">7.5</text>
+  <text x="534" y="304" class="td">42.30</text>
+  <text x="612" y="304" class="td">8.10</text>
+  <text x="688" y="304" class="td">145.00</text>
+  <text x="764" y="304" class="td">160.20</text>
+  <text x="842" y="304" class="td">1692.00</text>
+
+  <!-- Row 3 -->
+  <rect x="33" y="313" width="894" height="26" fill="#FFFFFF" />
+  <text x="44" y="330" class="td">Step 10:Com_Send</text>
+  <text x="278" y="330" class="td">40</text>
+  <text x="333" y="330" class="td">40</text>
+  <text x="392" y="330" class="td">0</text>
+  <text x="456" y="330" class="td">0.0</text>
+  <text x="534" y="330" class="td">4.01</text>
+  <text x="612" y="330" class="td">3.10</text>
+  <text x="688" y="330" class="td">6.20</text>
+  <text x="764" y="330" class="td">7.80</text>
+  <text x="842" y="330" class="td">160.40</text>
+
+  <!-- Row 4 -->
+  <rect x="33" y="339" width="894" height="26" fill="#F8FAFC" />
+  <text x="44" y="356" class="td">Step 30:Time_Stamp</text>
+  <text x="278" y="356" class="td">38</text>
+  <text x="333" y="356" class="td">38</text>
+  <text x="392" y="356" class="td">0</text>
+  <text x="456" y="356" class="td">0.0</text>
+  <text x="534" y="356" class="td">1.00</text>
+  <text x="612" y="356" class="td">0.80</text>
+  <text x="688" y="356" class="td">1.50</text>
+  <text x="764" y="356" class="td">2.10</text>
+  <text x="842" y="356" class="td">38.00</text>
+
+  <!-- ⑥ コマンド別 水平棒グラフ -->
+  <rect x="32" y="390" width="896" height="176" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text x="46" y="411" class="ui" font-size="11.5" font-weight="700" fill="#1E293B">コマンド別 平均 / 最大処理時間 (ms) Top 15</text>
+  <!-- 凡例 -->
+  <rect x="706" y="401" width="11" height="10" fill="#3478C8" />
+  <text x="722" y="410" class="ui" font-size="10.5" fill="#475569">平均(ms)</text>
+  <rect x="780" y="401" width="11" height="10" fill="#C8DCF5" />
+  <text x="796" y="410" class="ui" font-size="10.5" fill="#475569">最大(ms)</text>
+  <rect x="854" y="401" width="11" height="10" fill="#D74848" />
+  <text x="870" y="410" class="ui" font-size="10.5" fill="#475569">エラー有</text>
+
+  <!-- Bars -->
+  <text x="210" y="440" class="ui" font-size="11" fill="#334155" text-anchor="end">Sequence:MeasSequence</text>
+  <rect x="222" y="427" width="600" height="18" fill="#C8DCF5" />
+  <rect x="222" y="430" width="328" height="12" fill="#3478C8" />
+  <text x="830" y="440" class="ui" font-size="10.5" fill="#64748B">99.1 / 181.1 ms</text>
+
+  <text x="210" y="472" class="ui" font-size="11" fill="#334155" text-anchor="end">Step 20:Com_WaitPrompt</text>
+  <rect x="222" y="459" width="530" height="18" fill="#C8DCF5" />
+  <rect x="222" y="462" width="142" height="12" fill="#D74848" />
+  <text x="760" y="472" class="ui" font-size="10.5" fill="#64748B">42.3 / 160.2 ms</text>
+
+  <text x="210" y="504" class="ui" font-size="11" fill="#334155" text-anchor="end">Step 10:Com_Send</text>
+  <rect x="222" y="491" width="28" height="18" fill="#C8DCF5" />
+  <rect x="222" y="494" width="14" height="12" fill="#3478C8" />
+  <text x="258" y="504" class="ui" font-size="10.5" fill="#64748B">4.0 / 7.8 ms</text>
+
+  <text x="210" y="536" class="ui" font-size="11" fill="#334155" text-anchor="end">Step 30:Time_Stamp</text>
+  <rect x="222" y="523" width="10" height="18" fill="#C8DCF5" />
+  <rect x="222" y="526" width="5" height="12" fill="#3478C8" />
+  <text x="240" y="536" class="ui" font-size="10.5" fill="#64748B">1.0 / 2.1 ms</text>
+
+  <!-- ステータスバー -->
+  <rect x="21" y="576" width="918" height="25" fill="#F1F5F9" />
+  <line x1="21" y1="576" x2="939" y2="576" stroke="#CBD5E1" />
+  <text x="34" y="593" class="ui" font-size="10.5" fill="#475569">読込完了 (09:05:30) — Traces: 128 / Logs: 322 / Metrics: 14  [C:\Users\user\Desktop\Monaca\telemetry]</text>
+
+  <!-- コールアウト番号バッジ ①〜⑥ -->
+  <g transform="translate(556, 52)"><circle r="11" class="badge-circle" /><text class="badge-num">1</text></g>
+  <g transform="translate(382, 88)"><circle r="11" class="badge-circle" /><text class="badge-num">2</text></g>
+  <g transform="translate(476, 128)"><circle r="11" class="badge-circle" /><text class="badge-num">3</text></g>
+  <g transform="translate(170, 200)"><circle r="11" class="badge-circle" /><text class="badge-num">4</text></g>
+  <g transform="translate(918, 240)"><circle r="11" class="badge-circle" /><text class="badge-num">5</text></g>
+  <g transform="translate(918, 396)"><circle r="11" class="badge-circle" /><text class="badge-num">6</text></g>
+</svg>

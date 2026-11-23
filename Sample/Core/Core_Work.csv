@@ -1,0 +1,32 @@
+; ==============================================================================
+; Common.Core.Commands Sample: Work ドメイン (全5コマンド網羅)
+; 対象: Time_Stamp / Set_Data / Get_Line / Skip_Line / Skip_Data
+; ==============================================================================
+TITLE, "Core Work ワークテキスト処理サンプル"
+
+COMMAND, "GET_TIMESTAMP", "RESULT_DATA"
+,PARAM, FMT_STR, List, "日時書式", "yyyy/MM/dd HH:mm:ss", "yyyyMMdd_HHmmss", "HH:mm:ss.fff"
+,PARAM, RESULT_DATA, Text, "現在日時", ""
+,SEQUENCE, 10, Time_Stamp, "RESULT_DATA", "$FMT_STR$"
+,SEQUENCE, 20, Exit
+
+COMMAND, "PARSE_LINES", "RESULT_DATA"
+,PARAM, SRC_TEXT, Text, "入力複数行テキスト", "HEADER_ECHO\r\nTEMP=25.4\r\nHUMID=48.2"
+,PARAM, SKIP_CNT, List, "先頭スキップ行数", "1", "0", "2"
+,PARAM, TARGET_LINE, Text, "抽出行番号(1始まり)", "1"
+,PARAM, WORK_BUF, Work, "作業バッファ", ""
+,PARAM, RESULT_DATA, Text, "抽出行結果", ""
+,SEQUENCE, 10, Set_Data, "WORK_BUF", "$SRC_TEXT$"
+,SEQUENCE, 20, Skip_Line, "$SKIP_CNT$", "WORK_BUF"
+,SEQUENCE, 30, Get_Line, "RESULT_DATA", "$TARGET_LINE$", "WORK_BUF"
+,SEQUENCE, 40, Exit
+
+COMMAND, "SKIP_PREFIX", "RESULT_DATA"
+,PARAM, SRC_TEXT, Text, "入力文字列", "STATUS:OK,VALUE=123.45"
+,PARAM, SKIP_KEY, Text, "スキップ区切り文字", "VALUE="
+,PARAM, WORK_BUF, Work, "作業バッファ", ""
+,PARAM, RESULT_DATA, Text, "切出結果", ""
+,SEQUENCE, 10, Set_Data, "WORK_BUF", "$SRC_TEXT$"
+,SEQUENCE, 20, Skip_Data, "$SKIP_KEY$", "WORK_BUF"
+,SEQUENCE, 30, Set_Data, "RESULT_DATA", "WORK_BUF"
+,SEQUENCE, 40, Exit

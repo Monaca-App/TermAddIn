@@ -49,7 +49,7 @@
 
 ```csv
 COMMAND, "FLOW_JUMP_FINISH", ""
-,PARAM, "DEST_ROW", String, "ジャンプ先セル/名前定義", "FINAL_STEP"
+,PARAM, "DEST_ROW", Text, "ジャンプ先セル/名前定義", "FINAL_STEP"
 ,SEQUENCE, 010, Excel_Jump, 1
 ```
 
@@ -72,8 +72,8 @@ sequenceDiagram
     participant Cmd as "ExcelJumpCommand"
     participant Sheet as "Excel シート (現在位置セル)"
 
-    Bridge->>Engine: ExecuteStepAsync(rowData)
-    Engine->>Cmd: Execute(TargetParamNo)
+    Bridge->>Engine: ExecuteStepAsync(rowData, cancellationToken)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
     alt TargetParamNo >= 1 (有効な整数)
         Cmd-->>Engine: AnalysisResult.ExcelJump(TargetParamNo)
@@ -118,6 +118,7 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 有効なパラメータ番号指定（`"2"`） | `Flow = Jump` かつ `TargetParamNumber = 2` が返る | 無条件シート行ジャンプの基本動作検証 |
-| **2** | 異常系 | `0` 指定（`"0"`）または非数値指定（`"ABC"`） | エラーログが出力され `Flow = Halt` が返る | 不正パラメータ番号に対する防御検証 |
-| **3** | 異常系 | 引数省略（空配列） | エラーログが出力され `Flow = Halt` が返る | 必須引数欠落時の安全停止検証 |
+| **1** | 正常系 | 正整数パラメータ番号の直接指定 `("1")` | `Flow = Jump` かつ `TargetParamNumber = 1` が返る | 無条件シート行ジャンプの基本動作検証 |
+| **2** | 正常系 | `$PARAM$` マクロ展開指定 `("$P_IDX$")`（`P_IDX = "2"`） | `Flow = Jump` かつ `TargetParamNumber = 2` が返る | `$PARAM$` 置換によるパラメータ番号解決の検証 |
+| **3** | 異常系 | `0` 以下のパラメータ番号指定 `("0")` | エラーログが出力され `Flow = Halt` が返る | 不正パラメータ番号に対する防御検証 |
+| **4** | 異常系 | 非数値文字列指定 `("A12")` | エラーログが出力され `Flow = Halt` が返る | 非整数入力時の安全停止検証 |

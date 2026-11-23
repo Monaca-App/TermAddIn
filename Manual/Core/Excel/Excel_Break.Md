@@ -46,11 +46,13 @@
 
 ```csv
 COMMAND, "POLL_READY_OR_BREAK", "RESP"
-,PARAM, "EXIT_DEST", String, "完了時脱出先", "POST_LOOP"
+,PARAM, "EXIT_DEST", Text, "完了時脱出先", "POST_LOOP"
 ,PARAM, "RESP", Work, "受信応答", ""
-,SEQUENCE, 010, Com_Send, "STATUS?"
-,SEQUENCE, 020, Judge, "NEQ", "$RESP$", "READY", #CONTINUE_LOOP#
-,SEQUENCE, 030, Excel_Break, 1
+,SEQUENCE, 010, Gpib_Send, "STATUS?"
+,SEQUENCE, 020, Gpib_Receive, "RESP"
+; RESP が "READY" と一致すれば次行 (Excel_Break) へ進み、不一致なら #CONTINUE_LOOP# へ分岐
+,SEQUENCE, 030, Judge, "EQU", "$RESP$", "READY", #CONTINUE_LOOP#
+,SEQUENCE, 040, Excel_Break, 1
 ,SEQUENCE, #CONTINUE_LOOP#, Exit
 ```
 
@@ -73,8 +75,8 @@ sequenceDiagram
     participant Cmd as "ExcelBreakCommand"
     participant Stack as "シート単位ループスタック"
 
-    Bridge->>Engine: ExecuteStepAsync(rowData)
-    Engine->>Cmd: Execute(ExitJumpParamNo)
+    Bridge->>Engine: ExecuteStepAsync(rowData, cancellationToken)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
     Cmd-->>Engine: AnalysisResult.ExcelBreak(ExitJumpParamNo)
     deactivate Cmd
@@ -119,4 +121,4 @@ sequenceDiagram
 | :---: | :--- | :--- | :--- | :--- |
 | **1** | 正常系 | 引数省略で実行 | `Flow = Break` かつ `TargetParamNumber = 0` が返る | ブレークポイント中断・既定脱出の基本検証 |
 | **2** | 正常系 | 脱出先番号指定（`"2"`） | `Flow = Break` かつ `TargetParamNumber = 2` が返る | 明示脱出先パラメータ番号指定の検証 |
-| **3** | 異常系 | `0` 指定（`"0"`）または非数値指定（`"XYZ"`） | エラーログが出力され `Flow = Halt` が返る | 不正パラメータ番号に対する防御検証 |
+| **3** | 異常系 | `0` 以下のパラメータ番号指定（`"0"`） | エラーログが出力され `Flow = Halt` が返る | 不正パラメータ番号に対する防御検証 |

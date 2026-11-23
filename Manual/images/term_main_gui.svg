@@ -145,39 +145,41 @@
   </g>
 
   <!-- 右側コールアウト群 -->
-  <!-- コールアウト A: 通信モード(M) ドロップダウン内訳 -->
-  <g transform="translate(608, 30)" filter="url(#winShadow)">
-    <rect x="0" y="0" width="308" height="154" rx="6" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1.4" />
+  <!-- コールアウト A: 通信モード(M) ドロップダウン内訳 (全7種) -->
+  <g transform="translate(608, 26)" filter="url(#winShadow)">
+    <rect x="0" y="0" width="308" height="196" rx="6" fill="#FFFFFF" stroke="#60A5FA" stroke-width="1.4" />
     <rect x="0" y="0" width="308" height="28" rx="6" fill="#EFF6FF" />
-    <text x="14" y="19" class="ui" font-size="12" font-weight="700" fill="#1E3A8A">① メニュー「通信モード(M)」切替一覧</text>
-    <text x="18" y="48" class="mono" font-size="12" font-weight="700" fill="#1D4ED8">✓ RS-232C    (COM シリアル / c2c)</text>
-    <text x="18" y="70" class="mono" font-size="12" fill="#334155">  TELNET     (TCP/IP ソケット)</text>
-    <text x="18" y="92" class="mono" font-size="12" fill="#334155">  MODBUS     (RTU / ASCII / TCP)</text>
-    <text x="18" y="114" class="mono" font-size="12" fill="#334155">  MELSEC     (計算機リンク 形式1～5)</text>
-    <text x="18" y="136" class="mono" font-size="12" fill="#334155">  MELSEC MC  (3Eフレーム TCP/UDP)</text>
+    <text x="12" y="19" class="ui" font-size="11.5" font-weight="700" fill="#1E3A8A">① メニュー「通信モード(M)」切替一覧（全7種）</text>
+    <text x="14" y="48" class="mono" font-size="11.5" font-weight="700" fill="#1D4ED8">✓ RS-232C    (COM / c2c / Emu)</text>
+    <text x="14" y="69" class="mono" font-size="11.5" fill="#334155">  TELNET     (TCP/IP ソケット)</text>
+    <text x="14" y="90" class="mono" font-size="11.5" fill="#334155">  MODBUS     (RTU / ASCII / TCP)</text>
+    <text x="14" y="111" class="mono" font-size="11.5" fill="#334155">  MELSEC     (計算機リンク 形式1～5)</text>
+    <text x="14" y="132" class="mono" font-size="11.5" fill="#334155">  MELSEC MC  (3Eフレーム TCP)</text>
+    <text x="14" y="153" class="mono" font-size="11.5" fill="#334155">  OMRON FINS (UDP / TCP / HostLink)</text>
+    <text x="14" y="174" class="mono" font-size="11.5" fill="#334155">  KEYENCE KV (TCP / UDP / Serial)</text>
   </g>
   <path d="M 238 74 L 606 74" fill="none" stroke="#3B82F6" stroke-width="1.5" stroke-dasharray="4 3" />
 
   <!-- コールアウト B: 各部説明 -->
-  <rect x="608" y="200" width="308" height="322" class="callout-box" />
-  <text x="622" y="224" class="callout-title">② ツールバー（左 ➔ 右）</text>
-  <text x="622" y="243" class="callout-txt">・終了 ｜ ログ開く・閉じる ｜ ポート開く・閉じる</text>
-  <text x="622" y="260" class="callout-txt">・プロパティ・速度設定▼ ｜ テキスト送信・履歴▼</text>
-  <text x="622" y="277" class="callout-txt">・コマンド編集・コマンド実行▶▼・停止■</text>
+  <rect x="608" y="236" width="308" height="286" class="callout-box" />
+  <text x="622" y="256" class="callout-title">② ツールバー（左 ➔ 右）</text>
+  <text x="622" y="273" class="callout-txt">・終了 ｜ ログ開く・閉じる ｜ ポート開く・閉じる</text>
+  <text x="622" y="288" class="callout-txt">・プロパティ・速度設定▼ ｜ テキスト送信・履歴▼</text>
+  <text x="622" y="303" class="callout-txt">・コマンド編集・コマンド実行▶▼・停止■</text>
 
-  <text x="622" y="303" class="callout-title">③ 通信状態 LED ランプ（右端）</text>
-  <text x="622" y="322" class="callout-txt">・未接続時は赤色、ポート接続中は緑色に点灯します。</text>
+  <text x="622" y="325" class="callout-title">③ 通信状態 LED ランプ（右端）</text>
+  <text x="622" y="342" class="callout-txt">・未接続時は赤色、ポート接続中は緑色に点灯します。</text>
 
-  <text x="622" y="348" class="callout-title">④ 送受信ターミナル画面（txtTerm）</text>
-  <text x="622" y="367" class="callout-txt">・送受信データのリアルタイム表示・直接キー送信。</text>
-  <text x="622" y="384" class="callout-txt">・「時刻表示 ➔ 時刻有効」でミリ秒時刻を先頭付加。</text>
-  <text x="622" y="401" class="callout-txt">・受信データは共通ワークバッファへ自動格納。</text>
+  <text x="622" y="364" class="callout-title">④ 送受信ターミナル画面（txtTerm）</text>
+  <text x="622" y="381" class="callout-txt">・送受信データのリアルタイム表示・直接キー送信。</text>
+  <text x="622" y="396" class="callout-txt">・「時刻表示 ➔ 時刻有効」でミリ秒時刻を先頭付加。</text>
+  <text x="622" y="411" class="callout-txt">・受信データは共通ワークバッファへ自動格納。</text>
 
-  <text x="622" y="427" class="callout-title">⑤ 下部ステータスバー（3ペイン）</text>
-  <text x="622" y="446" class="callout-txt">・左：現在の通信ステータス（接続中／切断中 等）</text>
-  <text x="622" y="463" class="callout-txt">・中：現在の接続先条件（COMポート・速度・IP等）</text>
+  <text x="622" y="433" class="callout-title">⑤ 下部ステータスバー（3ペイン）</text>
+  <text x="622" y="450" class="callout-txt">・左：現在の通信ステータス（接続中／切断中 等）</text>
+  <text x="622" y="465" class="callout-txt">・中：現在の接続先条件（COMポート・速度・IP等）</text>
   <text x="622" y="480" class="callout-txt">・右：ポート接続後の経過時間タイマー（HH:mm:ss）</text>
-  <text x="622" y="504" class="callout-txt">※メニュー「設定(S)」から言語切替・監査ログ確認可</text>
+  <text x="622" y="502" class="callout-txt">※メニュー「設定(S)」から言語切替・監査ログ確認可</text>
 
   <!-- 番号バッジ -->
   <g>

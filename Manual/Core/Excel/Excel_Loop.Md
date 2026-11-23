@@ -49,7 +49,7 @@
 ```csv
 COMMAND, "EXCEL_LOOP_BEGIN", ""
 ,PARAM, "REPEAT_CNT", Number, "反復回数", "5"
-,PARAM, "BREAK_DEST", String, "Break時脱出先", ""
+,PARAM, "BREAK_DEST", Text, "Break時脱出先", ""
 ,SEQUENCE, 010, Excel_Loop, "$REPEAT_CNT$", 2
 ```
 
@@ -72,8 +72,8 @@ sequenceDiagram
     participant Cmd as "ExcelLoopCommand"
     participant Stack as "シート単位ループスタック"
 
-    Bridge->>Engine: ExecuteStepAsync(rowData)
-    Engine->>Cmd: Execute(Count, ExitJumpParamNo)
+    Bridge->>Engine: ExecuteStepAsync(rowData, cancellationToken)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
     alt Count >= 1 (有効な反復回数)
         Cmd-->>Engine: AnalysisResult.ExcelLoopStart(Count, ExitJumpParamNo)
@@ -118,6 +118,7 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 反復回数のみ指定（`"5"`） | `Flow = LoopStart`, `LoopCount = 5`, `TargetParamNumber = 0` が返る | 基本ループ開始動作の検証 |
-| **2** | 正常系 | 脱出先番号付き指定（`"3", "2"`） | `Flow = LoopStart`, `LoopCount = 3`, `TargetParamNumber = 2` が返る | 既定脱出先パラメータ番号保持の検証 |
-| **3** | 異常系 | `0` 回指定（`"0"`）または不正脱出先番号（`"3", "0"`） | エラーログが出力され `Flow = Halt` が返る | 不正引数に対する安全停止検証 |
+| **1** | 正常系 | `$PARAM$` 展開による反復回数指定・脱出先省略 `("$CNT$")`（`CNT = "5"`） | `Flow = LoopStart`, `LoopCount = 5`, `TargetParamNumber = 0` が返る | 基本ループ開始動作および `$PARAM$` 展開の検証 |
+| **2** | 正常系 | 16 進数回数指定＋脱出先番号指定 `("0x04", "2")` | `Flow = LoopStart`, `LoopCount = 4`, `TargetParamNumber = 2` が返る | 基数自動認識および既定脱出先パラメータ番号保持の検証 |
+| **3** | 異常系 | `0` 回の反復回数指定 `("0")` | エラーログが出力され `Flow = Halt` が返る | 不正ループ回数に対する安全停止検証 |
+| **4** | 異常系 | 不正な脱出先パラメータ番号指定 `("3", "-1")` | エラーログが出力され `Flow = Halt` が返る | 負数の脱出先番号に対する安全停止検証 |

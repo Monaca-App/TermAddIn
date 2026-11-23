@@ -48,7 +48,7 @@
 
 ```csv
 COMMAND, "SEQUENCE_EARLY_FINISH", "FINAL_MSG"
-,PARAM, "FINAL_MSG", String, "終了メッセージ", "PASS_COMPLETE"
+,PARAM, "FINAL_MSG", Text, "終了メッセージ", "PASS_COMPLETE"
 ,SEQUENCE, 010, Gpib_Send, "OUTP OFF"
 ,SEQUENCE, 020, Excel_Exit, "$FINAL_MSG$", 0
 ```
@@ -72,8 +72,8 @@ sequenceDiagram
     participant Cmd as "ExcelExitCommand"
     participant Sheet as "Excel シート ＆ ループスタック"
 
-    Bridge->>Engine: ExecuteStepAsync(rowData)
-    Engine->>Cmd: Execute(Message, ErrorCode)
+    Bridge->>Engine: ExecuteStepAsync(rowData, cancellationToken)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
     alt ErrorCode が有効な整数 (または省略)
         Cmd-->>Engine: AnalysisResult.ExcelExit(Message, ErrorCode)
@@ -116,6 +116,6 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 引数省略で実行 | `Flow = Exit` かつ `ErrorCode = 0` が返る | 既定の即時正常完了動作検証 |
-| **2** | 正常系 | メッセージ・終了コード指定（`"DONE", "1"`） | `Flow = Exit`, `Message = "DONE"`, `ErrorCode = 1` が返る | メッセージおよびステータスコード保持の検証 |
-| **3** | 異常系 | 非数値終了コード指定（`"DONE", "INVALID"`） | エラーログが出力され `Flow = Halt` が返る | 不正終了コードに対する防御検証 |
+| **1** | 正常系 | 引数省略 `()` で実行 | `Flow = Exit` かつ `ErrorCode = 0` が返る | 既定の即時正常完了動作検証 |
+| **2** | 正常系 | `$PARAM$` 展開メッセージ・終了コード指定 `("$MSG$", "100")`（`MSG = "DONE"`） | `Flow = Exit`, `OutputValue = "DONE"`, `ErrorCode = 100` が返る | `$PARAM$` マクロ展開およびステータスコード保持の検証 |
+| **3** | 異常系 | 非数値終了コード指定 `("NG", "NOT_INT")` | エラーログが出力され `Flow = Halt` が返る | 不正終了コードに対する防御検証 |

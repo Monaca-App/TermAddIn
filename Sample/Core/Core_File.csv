@@ -1,0 +1,41 @@
+; ==============================================================================
+; Common.Core.Commands Sample: File ドメイン (全5コマンド網羅)
+; 対象: Write_File / Append_File / Write_Line / Read_Line / Read_File
+; ==============================================================================
+TITLE, "Core File ファイル入出力サンプル"
+
+COMMAND, "FILE_WRITE"
+,PARAM, FILE_PATH, Text, "出力ファイルパス", "./core_sample_test.txt"
+,PARAM, INIT_TEXT, Text, "初期書込テキスト", "LINE1:Monaca Core File Sample"
+,PARAM, ENC_NAME, List, "文字コード", "SJIS", "UTF8"
+,SEQUENCE, 10, Write_File, "$FILE_PATH$", "$INIT_TEXT$", "Overwrite", "$ENC_NAME$"
+,SEQUENCE, 20, Exit
+
+COMMAND, "FILE_APPEND"
+,PARAM, FILE_PATH, Text, "追記ファイルパス", "./core_sample_test.txt"
+,PARAM, ADD_TEXT, Text, "追記テキスト", "\r\nLINE2:Appended Data"
+,PARAM, ENC_NAME, List, "文字コード", "SJIS", "UTF8"
+,SEQUENCE, 10, Append_File, "$FILE_PATH$", "$ADD_TEXT$", "$ENC_NAME$"
+,SEQUENCE, 20, Exit
+
+COMMAND, "LINE_WRITE"
+,PARAM, FILE_PATH, Text, "書込ファイルパス", "./core_sample_test.txt"
+,PARAM, LINE_TEXT, Text, "追加行テキスト", "LINE3:Written by Write_Line"
+,PARAM, ENC_NAME, List, "文字コード", "SJIS", "UTF8"
+,SEQUENCE, 10, Write_Line, "$FILE_PATH$", "$LINE_TEXT$", "", "$ENC_NAME$"
+,SEQUENCE, 20, Exit
+
+COMMAND, "LINE_READ", "RESULT_DATA"
+,PARAM, FILE_PATH, Text, "読込ファイルパス", "./core_sample_test.txt"
+,PARAM, LINE_NO, Text, "読込行番号(1始まり)", "2"
+,PARAM, ENC_NAME, List, "文字コード", "SJIS", "UTF8"
+,PARAM, RESULT_DATA, Text, "抽出行データ", ""
+,SEQUENCE, 10, Read_Line, "$FILE_PATH$", "$LINE_NO$", "RESULT_DATA", "$ENC_NAME$"
+,SEQUENCE, 20, Exit
+
+COMMAND, "FILE_READ_ALL", "RESULT_DATA"
+,PARAM, FILE_PATH, Text, "読込ファイルパス", "./core_sample_test.txt"
+,PARAM, ENC_NAME, List, "文字コード", "SJIS", "UTF8"
+,PARAM, RESULT_DATA, Range, "ファイル全文結果", ""
+,SEQUENCE, 10, Read_File, "$FILE_PATH$", "RESULT_DATA", "$ENC_NAME$"
+,SEQUENCE, 20, Exit

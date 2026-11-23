@@ -10,7 +10,7 @@
 [![Excel](https://img.shields.io/badge/Excel-2016%20%2F%202019%20%2F%202021%20%2F%20M365-green.svg)](https://www.microsoft.com/excel)
 [![Framework](https://img.shields.io/badge/.NET%20Framework-4.8-purple.svg)](https://dotnet.microsoft.com/)
 [![Architecture](https://img.shields.io/badge/Architecture-VSTO%20Add--In-orange.svg)]()
-[![Status](https://img.shields.io/badge/Status-Coming%20Soon-yellow.svg)]()
+[![License](https://img.shields.io/badge/Trial-Free%20Trial%20Available-brightgreen.svg)]()
 
 ## 📖 概要
 
@@ -25,7 +25,7 @@
 > * **セキュリティ警告・ブロックの完全回避**: 近年の Windows / Office 環境ではマクロ有効ブック（`.xlsm`）に対するセキュリティ制限（信頼できない発行元のブロック、インターネット属性・MOTW によるマクロ強制停止等）が極めて厳格化されています。本アドインはブック側に一切のマクロ（VBA）を含まないため、 **標準の `.xlsx` ファイルとして何らセキュリティ警告を受けることなく安全に作成・保存・運用・社内共有** できます。
 > * **VBE・マクロ保守の手間ゼロ**: Excel のバージョン差異による VBE 参照設定エラーやマクロコード破損のリスクがなく、長期にわたる検査・計測システムの安定稼働を実現します。
 
-※本アドインは現在 **近日公開（リリース準備中）** です（無料評価期間は **公開時に設定** いたします）。
+※本アドインは現在 **公開中** です。
 
 > [!NOTE]
 > **詳細マニュアルのご案内**  
@@ -46,7 +46,7 @@
   * **[TCP/IP Telnet ソケット通信（`Telnet`）](https://github.com/Monaca-App/TermAddIn_Telnet)**: ネットワーク機器や産業用コントローラに対して IP アドレス・ポート番号指定でソケット接続し、NVT（IAC コマンド）自動ネゴシエーションやプロンプト待機を行えます。
   * **[Modbus 通信制御（`Modbus`）](https://github.com/Monaca-App/TermAddIn_Modbus)**: **Modbus RTU** 、 **Modbus ASCII** 、および **Modbus TCP** の全3モードに対応。CRC-16 / LRC チェックサムや MBAP ヘッダを自動生成・検証し、保持レジスタ（FC03）・入力レジスタ（FC04）の読出および単一・複数レジスタ書込をコマンド1行で実行できます。
   * **[三菱電機 MELSEC 計算機リンク（`Melco`）](https://github.com/Monaca-App/TermAddIn_Melco)**: 形式 1 〜 形式 5 の全プロトコルフレームを完全網羅。要求・応答フレーム送受信、ENQ / ACK / NAK 制御、サムチェック自動算出・照合に加え、直感的なデバイス名（D100, M0 等）でアクセス可能な高水準コマンド群を提供します。
-  * **[三菱電機 MELSEC MCプロトコル通信（`MelcoMC`）](https://github.com/Monaca-App/TermAddIn_MelcoMC)**: イーサネット経由の業界標準 **MC プロトコル（3E フレーム・バイナリ/ASCII 交信）** に完全対応。シーケンサ CPU や Ethernet ユニット直結でワード・ビットデバイスの高速一括読出・書込を実行できます。
+  * **[三菱電機 MELSEC MCプロトコル通信（`MelcoMC`）](https://github.com/Monaca-App/TermAddIn_MelcoMC)**: イーサネット経由の業界標準 **MC プロトコル（QnA 互換 3E フレーム・TCP/IP バイナリ交信）** に完全対応。シーケンサ CPU や Ethernet ユニット直結でワード・ビットデバイスの高速一括読出・書込を実行できます。
   * **[オムロン FINS / Sysmac 通信（`Omron`）](https://github.com/Monaca-App/TermAddIn_Omron)**: **FINS/UDP（ポート 9600）** 、 **FINS/TCP（自動ノード通知ハンドシェイク付き）** 、および **シリアル HostLink（FCS 自動計算）** の全3方式に対応。SYSMAC CS/CJ/CP/NJ/NX シリーズの各メモリエリア（DM, CIO, WR, HR, AR, EM 等）をコマンド1行で制御できます。
   * **[キーエンス KV 上位リンク通信（`Keyence`）](https://github.com/Monaca-App/TermAddIn_Keyence)**: **Ethernet TCP/UDP 上位リンク（標準ポート 8501）** および **RS-232C シリアル上位リンク（自動 `CR`/`CQ` 対応）** に対応。KV-8000〜KV-Nano の DM/EM/W/MR/R 等をデータ形式サフィックス（`.U`/`.S`/`.H`/`.D`/`.L`）付きで高速制御できます。
 * **将来拡張予定のエクステンション・ラインナップ（順次拡張予定）**:
@@ -54,15 +54,15 @@
 
 ### 3. プロンプト自動待機・受信データ抽出（sscanf / sprintf 2次元展開）
 * 相手機器から特定の応答プロンプト（例: `"OK"`, `">"`, `"login:"` 等）が返るまで非同期で待機し、タイムアウト時には指定ラベルへ自動分岐する堅牢な対話制御が可能です。
-* 受信した電文は共通ワークバッファ（`IWorkBufferHost`）へ自動格納され、`Set_Data` コマンドの書式指定によって必要な数値やステータスだけを抽出し、Excel セルへ直接展開できます。
+* 受信した電文は共通受信ワークバッファへ自動格納され、`Set_Data` コマンドの書式指定によって必要な数値やステータスだけを抽出し、Excel セルへ直接展開できます。
 
 ### 4. セル単位でテストシーケンスを簡単構築
 * リボンメニューの「シーケンス配置」をクリックするだけで、コマンド実行ボタン・ウェイト・コマンド名・結果セル・パラメータ枠がシート上に自動生成されます。
 * リスト型のパラメータには Excel の入力規則（ドロップダウンリスト）が自動適用され、入力ミスを防ぎます。
 
-### 5. 単発実行 ＆ 一括自動実行
+### 5. 単発実行 ＆ 4列制御ブロックによる一括・ステップ実行
 * **個別実行**: 各コマンド行の左端にある「実行」ボタン（ActiveX ボタン）をクリックすれば、その行のコマンドだけを単体テストできます。
-* **一括実行（Start）**: 「Startボタン配置」で生成される Start ボタンを押すだけで、指定した開始行から下に向かって定義されたシーケンスを順番に自動実行します。
+* **一括連続実行（Start）／ 1ステップ実行（Step）**: 「Startボタン配置」で生成される **4 列制御ブロック（`Start` ボタン・`Step` ボタン・`開始位置`・`現在位置`）** により、指定した開始位置からの連続自動実行、1 行ずつのステップデバッグ実行、および中断箇所（`現在位置`）からの途中再開を行えます。
 
 ### 6. 取得データのリアルタイム・自動セル展開
 * 機器からの取得データやレジスタ読出値は、シーケンス行の結果セル（Result列）へリアルタイムに書き込まれます。
@@ -77,7 +77,7 @@
 * シーケンスデータは標準のExcelセル情報として保持されるため、ライセンスの有無によるファイルロックや破損等の心配がなく、「自席のノートPCでシーケンスを作成し、検査ラインのライセンスPCで本番実行する」という柔軟な分業・運用を実現できます。
 
 ### 9. 多言語UI対応（日本語 / 英語 / 自動判別）
-* メイン画面のメニュー（[環境設定...] ➔ [環境設定]）から、画面表示言語を **「日本語」「英語」「自動判別（OS設定準拠）」** から自由に切り替え可能です。
+* メイン画面のメニュー（`[設定]` ➔ `[設定...]`）から、画面表示言語を **「日本語」「英語」「自動判別（OS設定準拠）」** から自由に切り替え可能です。
 * 言語を切り替えると、メイン画面・コマンド編集画面・プロパティ設定画面・Excelリボンメニューの表示ラベルがリアルタイムに即座に更新され、設定は次回起動時も保持されます。
 
 ### 10. 通常 Excel ファイルの高速オープン・オーバーヘッド防止（除外キャッシュ）
@@ -86,7 +86,7 @@
 
 ### 11. 設定変更履歴の自動記録（安心設計・トレーサビリティ保証）
 * 誤った通信設定の早期発見や検査ラインでの安心運用のため、COM ポート条件や IP アドレス等の環境設定を変更して保存した際、変更前後の内容が自動的に監査ログファイルへ記録されます。
-* ログの保存先フォルダやファイル名は、メイン画面のメニュー（[環境設定...] ➔ [エラー履歴]）から自由に変更・確認が可能です（既定はデスクトップの `Monaca\info.log`）。
+* ログの保存先フォルダやファイル名は、メイン画面のメニュー（`[設定]` ➔ `[設定エラー履歴...]`）から自由に変更・確認が可能です（既定はデスクトップの `Monaca\info.log`）。
 
 ### 12. ドライバ不要の仮想通信中継 ＆ 仮想デバイス・PLC エミュレータ連携（`c2c` / `TermEmulator` 対応）
 * 実機のシリアル機器や RS-232C / RS-485 変換ケーブルが手元にない環境でも、公式無償コンパニオンツール **[c2c](https://github.com/Monaca-App/c2c)** を起動するだけで、カーネルドライバの導入や管理者権限なしに仮想 COM ポートペア（例: `COM10` ⇔ `COM11`、8ピン仮想結線対応）や Ethernet 中継を利用できます。
@@ -119,7 +119,7 @@
 コマンド実行によって機器から返却された応答データや読出値は、 **+3列目の下段セル（Result設定セル）に指定されたターゲット位置へ自動的に書き込まれます** 。運用にあたっては以下の動作仕様と注意点をご確認ください。
 
 1. **出力先リストの自動表示（データ出力コマンド時）**:
-   * コマンド定義にデータ出力（`ResultItem`）が設定されている場合、シーケンス配置時にブック内の名前定義をスキャンし、 **出力先候補となる名前付きセルの選択ダイアログ** が自動表示されます。
+   * コマンド定義に結果出力項目が設定されている場合、シーケンス配置時にブック内の名前定義をスキャンし、 **出力先候補となる名前付きセルの選択ダイアログ** が自動表示されます。
 2. **未選択時の動作（セル番地自動設定）**:
    * ダイアログでリストから何も選択せずに [OK]（または [キャンセル]）をクリックした場合、 **そのシーケンス行の結果セル自身のアドレス（例: `D10` など）** が下段セルに自動設定されます。
 3. **名前付きセルの事前準備（推奨）**:
@@ -138,25 +138,24 @@ Excel 上部に表示される専用リボンタブ（「アドイン」タブ�
 
 | グループ | ボタン名 | 機能説明 |
 | :--- | :--- | :--- |
-| **ツール (`tool`)** | **マニュアル配置 (`Make_Doc`)** | 取扱説明書（オフライン閲覧対応 HTML 形式ファイル一式）を設定場所の `Manual` フォルダへ、各プロトコルのサンプルマクロ・AIプロンプト群を `Sample\TermAddIn` フォルダへ差分展開します。 |
 | **ツール (`tool`)** | **スタイル保存 (`Save_Style`)** | 現在選択されている行のセル装飾（背景色、罫線、フォント、列幅等）を読み取り、今後の新規作成時の既定テンプレートとして保存します。 |
-| **ツール (`tool`)** | **Startボタン配置 (`Start`)** | シート上にシーケンス全体を上から順に自動連続実行する「Start ボタン」と「開始位置選択セル」を任意の位置に配置します。 |
-| **ツール (`tool`)** | **シーケンス削除 (`Delete_Sequence`)** | 選択中のシーケンス行（2行分）または一括実行ボタン行を、Excel内部の連携を安全に解除しながら削除します。 |
-| **Term制御 (`Term`)** | **ツール起動 (`ToolOpen`)** | 通信制御用アプリケーションのメイン操作画面を表示します。接続状態の確認や送受信ログのリアルタイムモニタリングが可能です。 |
-| **Term制御 (`Term`)** | **シーケンス配置 (`Make_Sequence`)** | 初回配置列をシートの基準カラムとして同一列に整列生成します（既存シーケンス行では確認後に直下行へ自動挿入）。 |
+| **ツール (`tool`)** | **Startボタン配置 (`Start`)** | シート上に **4 列制御ブロック（`Start` 一括実行ボタン・`Step` 1行実行ボタン・`開始位置` 選択セル・`現在位置` 表示セル）** を配置します。 |
+| **ツール (`tool`)** | **シーケンス削除 (`Delete_Sequence`)** | 選択中のシーケンス行（2行分）または Start 制御ブロック行を、Excel内部の連携を安全に解除しながら削除します。 |
+| **Term制御 (`Term`)** | **ツール起動 (`ToolOpen`)** | タスク番号選択ダイアログ（`P1`〜`P10` の最大 10 タスク）で対象タスクを選び、対応するメイン操作画面を表示します。接続状態の確認や送受信ログのリアルタイム監視が可能です。 |
+| **Term制御 (`Term`)** | **シーケンス配置 (`Make_Sequence`)** | タスク番号（`P1`〜`P10`）を選択後、コマンド編集画面がモーダル表示され、選択・設定したコマンドと初期パラメータをシート基準列へ自動整列生成します（既存シーケンス行では確認後に直下行へ自動挿入）。 |
 
 ---
 
-## 🖥️ メイン画面機能（モード切替・ログ管理・タイムスタンプ）
+## 🖥️ メイン画面機能（7モード切替・ログ管理・タイムスタンプ）
 
 Excel リボンメニューの **「ツール起動 (`ToolOpen`)」** ボタンから呼び出せるメイン画面から、対話的な通信テストやログ記録、動作モード切り替えを直接操作できます。
 
-### 1. 通信モード切替（Term / Telnet / Modbus）
-* メニューの **[モード] ➔ [Term] / [Telnet] / [Modbus]** から、手動通信テスト時の接続方式をワンクリックで切り替えられます。
-* マクロスクリプト実行時は、スクリプト内のオープンコマンド（`Com_Open`, `Telnet_Open`, `Modbus_Open`, `Melsec_Open`）によって自動的に該当プロトコルへ排他切り替えが行われます。
+### 1. 通信モード切替（全 7 通信モード動的連携）
+* メイン画面メニューの **`[通信モード]`** から、有効ライセンスに応じた **全 7 モード（`RS-232C` / `TELNET` / `MODBUS` / `MELSEC` / `MELSEC MC` / `OMRON FINS` / `KEYENCE KV`）** をワンクリックで切り替えられます。
+* マクロスクリプト実行時は、スクリプト内のオープンコマンド（`Com_Open`, `Telnet_Open`, `Modbus_Open`, `Melsec_Open`, `Mc_Open`, `Fins_Open`, `Kv_Open`）によって該当プロトコルでの通信セッションが開始されます。
 
 ### 2. 接続時刻表示（通信ログ タイムスタンプ付加）
-* メニューの **[時刻表示] ➔ [時刻有効] / [時刻無効]** から、送受信データログの各行の先頭にミリ秒精度のタイムスタンプ（`[ yyyy/MM/dd HH:mm:ss.fff ]`）を付加してリアルタイム表示・記録するかどうかを切り替えることができます。
+* メニューの **[時刻表示] ➔ [時刻有効] / [時刻無効]** から、送受信データログの各行の先頭にミリ秒精度のタイムスタンプ（`yyyy/MM/dd HH:mm:ss.fff`）を付加してリアルタイム表示・記録するかどうかを切り替えることができます。
 
 ### 3. バージョン情報確認（オフライン完全対応）
 * メニューの **[ヘルプ] ➔ [バージョン情報...]** を開くことで、現在稼働しているアプリケーションの正式バージョン番号、著作権情報、および動作環境（.NET Framework / OS 情報）をダイアログで確認できます。外部インターネット接続を一切行わないため、工場や検査ラインのオフラインPCでも安心してご利用いただけます。
@@ -183,7 +182,7 @@ Excel リボンメニューの **「ツール起動 (`ToolOpen`)」** ボタン�
 | **[Telnet ソケット通信（`Telnet`）](https://github.com/Monaca-App/TermAddIn_Telnet)** | **◯ 完全動作** | **◯ 完全動作** | OS 標準の TCP/IP ソケットを介して 32bit / 64bit 問わず完全動作します。 |
 | **[Modbus 通信（`Modbus`）](https://github.com/Monaca-App/TermAddIn_Modbus)** | **◯ 完全動作** | **◯ 完全動作** | Modbus RTU / ASCII（物理 COM・[c2c](https://github.com/Monaca-App/c2c) 仮想 COM）および TCP の全モードで完全動作します。 |
 | **[MELSEC 計算機リンク（`Melco`）](https://github.com/Monaca-App/TermAddIn_Melco)** | **◯ 完全動作** | **◯ 完全動作** | 形式 1 〜 形式 5 ともに物理 COM・[c2c](https://github.com/Monaca-App/c2c) 仮想 COM 上で完全動作します。 |
-| **[MELSEC MCプロトコル（`MelcoMC`）](https://github.com/Monaca-App/TermAddIn_MelcoMC)** | **◯ 完全動作** | **◯ 完全動作** | MC プロトコル 3E フレーム（TCP/UDP）ともに 32bit / 64bit 問わず完全動作します。 |
+| **[MELSEC MCプロトコル（`MelcoMC`）](https://github.com/Monaca-App/TermAddIn_MelcoMC)** | **◯ 完全動作** | **◯ 完全動作** | MC プロトコル QnA 互換 3E フレーム（TCP/IP バイナリ交信）にて 32bit / 64bit 問わず完全動作します。 |
 | **[OMRON FINS / Sysmac（`Omron`）](https://github.com/Monaca-App/TermAddIn_Omron)** | **◯ 完全動作** | **◯ 完全動作** | FINS/UDP・FINS/TCP およびシリアル HostLink（物理 COM・[c2c](https://github.com/Monaca-App/c2c) 仮想 COM）ともに完全動作します。 |
 | **[KEYENCE KV 上位リンク（`Keyence`）](https://github.com/Monaca-App/TermAddIn_Keyence)** | **◯ 完全動作** | **◯ 完全動作** | Ethernet TCP/UDP（Port 8501）および RS-232C シリアル上位リンクともに完全動作します。 |
 
@@ -198,21 +197,43 @@ Excel リボンメニューの **「ツール起動 (`ToolOpen`)」** ボタン�
 
 ## 🚀 インストール手順
 
-<img src="images/Monaca_app_get.jpg" width="140" alt="プログラム（近日公開・準備中）" />
+<a href="https://github.com/Monaca-App/TermAddIn/raw/main/Setup/TermAddIn_Setup.zip">
+  <img src="images/Monaca_app_get.jpg" width="140" alt="プログラム（入手）" />
+</a>
 
-> [!NOTE]
-> **インストーラー配布（近日公開・準備中）のご案内**  
-> **TermAddIn** は現在 **近日公開（リリース準備中）** のため、インストーラー一式のダウンロード配布は準備中です（無料評価期間は **公開時に設定** いたします）。公開開始後の導入手順は以下の通りです。
+> 上記の **「プログラム（入手）」アイコン** をクリックすると、必要なセットアッププログラム一式（[`TermAddIn_Setup.zip`](https://github.com/Monaca-App/TermAddIn/raw/main/Setup/TermAddIn_Setup.zip)：`Term/` および `TermAddIn/`）が直接ダウンロードされます。ダウンロードした ZIP ファイルを展開して以下の順に実行してください。
 
-1. 公開開始後、上記の入手アイコンからダウンロードしたアーカイブファイルを展開（解凍）し、`publish` フォルダ内にある **`setup.exe`** を実行します。
-   * ※ 管理者権限が必要となる場合があります。
-   * ※ 必要なランタイム（VSTO Runtime など）が未導入の場合は、自動的にインストーラーが案内します。
-2. インストールウィザードの指示に従い、「インストール」をクリックします。
-3. インストール完了後、 **Microsoft Excel** を起動します。
-4. Excel の上部リボンの **「アドイン」タブ** 内に **「ツール」** および **「Term制御」** グループが追加されていることを確認します。
+本製品は、 **① 本体（Term 通信アプリ・共通基盤・マニュアル）** と **② Excel アドイン（VSTO アドイン本体・Excel 自動登録）** の 2 つの MSI インストーラーで構成されています。  
+さらに、使用する通信プロトコル（`Comm` / `Telnet` / `Modbus` / `Melco` / `MelcoMC` / `Omron` / `Keyence`）のエクステンション インストーラーを追加導入することで機能が拡張されます。  
+いずれも共通のインストール先フォルダ（`C:\Program Files (x86)\Monacaアプリ工房\Monaca Common\`）へ統合導入されます。
+
+### インストーラー構成（`TermAddIn_Setup.zip` 内）
+
+| 導入順 | フォルダ | インストーラーファイル | 役割 |
+| :---: | :--- | :--- | :--- |
+| **① 先に実行** | `Term/` | `setup.exe` / `Term.Setup.msi` | Term 本体アプリ（`Term.exe`）・共通通信基盤・HTML 取扱説明書を導入します。 |
+| **② 次に実行** | `TermAddIn/` | `setup.exe` / `TermAddIn.Setup.msi` | Excel VSTO アドイン本体（`Monaca.Term.AddIn`）を導入し、Excel へ自動登録します。 |
+| **③ 必要に応じて** | 各エクステンション ZIP (`Setup/*_Setup.zip`) | `TermAnalysis.*.Setup.msi` / `setup.exe` | 使用する通信プロトコル拡張 DLL とサンプル資材を追加導入します（[Comm](https://github.com/Monaca-App/TermAddIn_Comm) / [Telnet](https://github.com/Monaca-App/TermAddIn_Telnet) / [Modbus](https://github.com/Monaca-App/TermAddIn_Modbus) / [Melco](https://github.com/Monaca-App/TermAddIn_Melco) / [MelcoMC](https://github.com/Monaca-App/TermAddIn_MelcoMC) / [Omron](https://github.com/Monaca-App/TermAddIn_Omron) / [Keyence](https://github.com/Monaca-App/TermAddIn_Keyence)）。 |
+
+### 導入ステップ
+
+1. **① 本体（`Term.Setup`）のインストール**:
+   * ダウンロードした **`TermAddIn_Setup.zip`** を展開し、 **`Term/`** フォルダ内の **`setup.exe`** （または **`Term.Setup.msi`** ）を実行します。
+   * インストールウィザードの指示に従い、インストールを完了します（既定のインストール先: `C:\Program Files (x86)\Monacaアプリ工房\Monaca Common\`）。
+   * ※ 管理者権限（UAC 承認）が必要です。必要なランタイム（.NET Framework 4.8 等）が未導入の場合は、`setup.exe` から自動的に導入案内が表示されます。
+2. **② Excel アドイン（`TermAddIn.Setup`）のインストール**:
+   * 続いて **`TermAddIn/`** フォルダ内の **`setup.exe`** （または **`TermAddIn.Setup.msi`** ）を実行します。
+   * ※ インストール時は **Microsoft Excel をすべて終了** しておいてください。
+   * 完了すると、Excel VSTO アドインが自動的にレジストリ登録され、デスクトップの **`Monaca\Manual`** フォルダへ取扱説明書へのショートカットが作成されます。
+3. **③ 通信プロトコル拡張（`TermAnalysis.*.Setup`）のインストール**:
+   * 利用したい通信プロトコルの各エクステンション リポジトリから `TermAddIn_<Ext>_Setup.zip` をダウンロード・展開し、`TermAnalysis.<Ext>/` 内の **`setup.exe`** （または **`TermAnalysis.<Ext>.Setup.msi`** ）を実行します。
+   * 拡張 DLL が共通フォルダ（`Monaca Common`）へ配置され、動作確認用サンプル資材が `Monaca Sample\<Ext>\` へ導入されます。
+4. **動作確認**:
+   * **Microsoft Excel** を起動し、上部リボンの **「アドイン」タブ** 内に **「ツール」** および **「Term制御」** グループが追加されていることを確認します。
 
 > [!TIP]
-> ネットワーク配布環境などで ClickOnce インストーラーを直接起動したい場合は、`Monaca.Term.AddIn.vsto` をダブルクリックしてインストールすることも可能です。
+> **スタンドアロン運用（Excel なし）について**  
+> Excel アドインを使用せず、単体アプリケーション（`Term.exe`）のみを利用する場合は、 **① `Term/`** と必要な **③ 通信プロトコル拡張** のインストールで動作します。
 
 ### ⚠️ インストール時に認証・セキュリティメッセージが表示される場合
 
@@ -221,34 +242,38 @@ Excel リボンメニューの **「ツール起動 (`ToolOpen`)」** ボタン�
   1. 画面内の **「詳細情報」** リンクをクリックします。
   2. 画面下部に表示される **「実行」** ボタンをクリックすると、インストーラーが起動します。
 
-#### 2. ダウンロードしたアーカイブファイルがブロックされている場合
+#### 2. ダウンロードしたファイルがブロックされている場合
 * **対処方法**:
-  1. ダウンロードしたファイルを右クリックして **「プロパティ」** を開きます。
+  1. ダウンロードしたファイル（`setup.exe` / `*.msi` / ZIP 等）を右クリックして **「プロパティ」** を開きます。
   2. 「全般」タブ下部のセキュリティ欄にある **「許可する」** （または「ブロックの解除」）にチェックを入れます。
-  3. **「適用」** ➔ **「OK」** をクリック後、改めて展開し `setup.exe` を実行してください。
+  3. **「適用」** ➔ **「OK」** をクリック後、改めてインストーラーを実行してください。
 
 ### アンインストール手順
-* Windows の「設定」>「アプリ」>「インストールされているアプリ」（または「コントロールパネル」の「プログラムと機能」）を開き、一覧から **`Monaca.Term.AddIn`** を選択して「アンインストール」を実行してください。
+* Windows の「設定」>「アプリ」>「インストールされているアプリ」（または「コントロールパネル」の「プログラムと機能」）を開き、一覧から不要になったコンポーネントをアンインストールしてください。
+  1. 各通信プロトコル拡張（ **`TermAnalysis.*.Setup`** ）
+  2. **`TermAddIn.Setup`** （Excel アドインの登録解除・削除）
+  3. **`Term.Setup`** （Term 本体アプリ・共通基盤の削除）
+* ※ 他の Monaca アプリ工房製品（`GPIB` / `GpibAddIn` / `c2c` / `TermEmulator` 等）を併用している場合、共通基盤（`Monaca Common`）の共有ファイルは Windows Installer の参照カウント機能により自動的に保護されます。
 
 ---
 
 ## 🔰 クイックスタート (使い方)
 
 > [!TIP]
-> **サンプルスクリプトおよび実機なし折り返しテストで確認する場合**  
-> * Excel リボンの **「マニュアル配置 (`Make_Doc`)」** を実行すると、各通信プロトコル拡張の動作確認用サンプルマクロ・AIプロンプト群（[COM シリアル通信 `Comm`](https://github.com/Monaca-App/TermAddIn_Comm) の `Comm.csv`、[Telnet 通信 `Telnet`](https://github.com/Monaca-App/TermAddIn_Telnet) の `Telnet.csv`、[Modbus 通信 `Modbus`](https://github.com/Monaca-App/TermAddIn_Modbus) の `Modbus_RTU.csv`・`Modbus_ASCII.csv`・`Modbus_TCP.csv`、[MELSEC 計算機リンク `Melco`](https://github.com/Monaca-App/TermAddIn_Melco) の `Melco_P1.csv`〜`Melco_P5.csv`、[MELSEC MC プロトコル `MelcoMC`](https://github.com/Monaca-App/TermAddIn_MelcoMC) の `MelcoMC.csv` 等）が **`<設定場所>\Sample\TermAddIn\`** 配下に自動展開されます。プロパティ画面から読み込ませることで、コマンド選択やシーケンス配置の動作イメージをすぐに確認できます。  
-> * 実機シリアル機器やケーブルが手元にない場合は、公式無償ツール **[c2c（仮想ヌルモデム＆通信モニター）](https://github.com/Monaca-App/c2c)** を起動するだけで、ドライバ導入不要で仮想ポートペア（既定: `COM10` ⇔ `COM11`）を使った折り返し通信テストを行えます。
+> **サンプルスクリプトおよび実機なし折り返し・仮想機器テストで確認する場合**  
+> * 各通信プロトコル拡張のインストーラーを実行すると、全 7 通信プロトコル拡張の動作確認用サンプルマクロ・AIプロンプト群（[COM シリアル通信 `Comm`](https://github.com/Monaca-App/TermAddIn_Comm) の `Comm.csv`、[Telnet 通信 `Telnet`](https://github.com/Monaca-App/TermAddIn_Telnet) の `Telnet.csv`、[Modbus 通信 `Modbus`](https://github.com/Monaca-App/TermAddIn_Modbus) の `Modbus_RTU.csv`・`Modbus_ASCII.csv`・`Modbus_TCP.csv`、[MELSEC 計算機リンク `Melco`](https://github.com/Monaca-App/TermAddIn_Melco) の `Melco_P1.csv`〜`Melco_P5.csv`、[MELSEC MC プロトコル `MelcoMC`](https://github.com/Monaca-App/TermAddIn_MelcoMC) の `MelcoMC.csv`、[オムロン FINS `Omron`](https://github.com/Monaca-App/TermAddIn_Omron) の `Omron_FINS.csv`、[キーエンス KV `Keyence`](https://github.com/Monaca-App/TermAddIn_Keyence) の `Keyence_KV.csv`）が **`C:\Program Files (x86)\Monacaアプリ工房\Monaca Sample\`** 配下に配置され、デスクトップの `Monaca\Sample` ショートカットから参照できます。プロパティ画面から読み込ませることで、コマンド選択やシーケンス配置の動作イメージをすぐに確認できます。  
+> * 実機シリアル機器や PLC が手元にない場合は、公式無償ツール **[c2c（仮想ヌルモデム＆通信モニター）](https://github.com/Monaca-App/c2c)** や仮想デバイス・PLC スレーブエミュレータ **[TermEmulator](https://github.com/Monaca-App/TermEmulator)** を併用するだけで、ドライバ導入不要で PC 単体通信テストを行えます。
 
 ### ステップ 1: Termマクロスクリプトの登録と通信設定
-1. **メイン画面とプロパティ画面の起動**: Excel リボンメニューの **「ツール起動 (ToolOpen)」** をクリックしてメイン画面を開き、メニューの **[ポート] ➔ [プロパティ]** （またはツールバーの **[プロパティ設定]** ）をクリックしてプロパティ設定画面を開きます。
-2. **スクリプトの登録**: **「コマンド選択」タブ** にて、使用する機器の Term マクロスクリプト（CSV定義ファイル、例: `Sample\TermAddIn\Comm\Comm.csv`、`Sample\TermAddIn\Telnet\Telnet.csv`、`Sample\TermAddIn\Modbus\Modbus_RTU.csv`、`Sample\TermAddIn\Melco\Melco_P4.csv`、`Sample\TermAddIn\MelcoMC\MelcoMC.csv` 等）を登録・選択します。
-3. **通信条件の設定**: 使用するプロトコルに応じて **「シリアル通信 (COMポート)」タブ** 、 **「TELNET 通信」タブ** 、または **「Modbus 通信」タブ** を開き、COM ポート番号・ボーレートや IP アドレスを設定して **「確定」** をクリックします。
+1. **メイン画面とプロパティ画面の起動**: Excel リボンメニューの **「ツール起動 (ToolOpen)」** をクリックし、操作対象のタスク番号（`P1`〜`P10`）を選択してメイン画面を開きます。続いてツールバーの **`[プロパティ]`** （またはメニュー）からプロパティ設定画面を開きます。
+2. **スクリプトの登録**: **`ファイル` タブ** （コマンド定義ファイル管理）にて、使用する機器の Term マクロスクリプト（CSV定義ファイル、例: `Sample\TermAddIn\Comm\Comm.csv`、`Telnet\Telnet.csv`、`Modbus\Modbus_RTU.csv`、`Melco\Melco_P4.csv`、`MelcoMC\MelcoMC.csv`、`Omron\Omron_FINS.csv`、`Keyence\Keyence_KV.csv` 等）を登録・選択します。
+3. **通信条件の設定**: 現在選択中の通信モード（全 7 モード）に応じて動的表示される専用設定タブ（ **`COM` タブ ／ `Telnet` タブ ／ `Modbus RTU`・`Modbus Socket` タブ ／ `MELSEC` タブ ／ `MELSEC MC` タブ ／ `OMRON FINS` タブ ／ `KEYENCE KV` タブ** ）を開き、COM ポート番号・ボーレートや接続先 IP アドレス・ポート番号を設定して **`[OK]`** をクリックします。
 
 ### ステップ 2: シーケンス行の追加
 1. 新規または既存の Excel ワークシートを開きます。
 2. シーケンスを配置したい開始セル（例: `A5` や任意のセル）を選択します。
 3. リボンメニューの **「シーケンス配置 (Make_Sequence)」** をクリックします。
-4. 選択したセルを先頭として、「実行」ボタン、待機時間、コマンド名、結果、各パラメータ設定セルがその行に自動配置されます。
+4. タスク番号（`P1`〜`P10`）を選択したのち **コマンド編集画面** がモーダル表示されます。実行したいコマンドと初期パラメータを選択して閉じると、選択したセルを先頭として「実行」ボタン（タスク識別子付き）、待機時間、コマンド名、結果、各パラメータ設定セルがその行に自動配置されます。
 
 ### ステップ 3: コマンドとパラメータの設定
 1. **コマンドセル**: 実行したい通信コマンドを選択または入力します。
@@ -259,10 +284,10 @@ Excel リボンメニューの **「ツール起動 (`ToolOpen`)」** ボタン�
 * 行頭の **[ 実行 ]** ボタンをクリックします。
 * コマンドが機器へ送信され、応答結果が **結果セル（Result）** に表示されます。
 
-### ステップ 5: 一括実行の配置と自動通信
+### ステップ 5: 一括・ステップ実行制御ブロックの配置と自動通信
 1. シーケンスの上部など任意のセル（例: `A2` 付近）を選択し、リボンの **「Startボタン配置 (Start)」** をクリックします。
-2. 配置された **Start** ボタンの右側セルで、実行を開始したい行のボタン位置（例: `A5`）を選択します。
-3. **Start** ボタンをクリックすると、シーケンスが上から順に自動実行され、取得結果が次々とシート上に記録されます。
+2. 選択セルを起点に **4 列制御ブロック（`Start` ボタン・`Step` ボタン・`開始位置` ドロップダウン・`現在位置` 表示セル）** が自動配置されます。`開始位置` セルで実行を開始したい行のボタン位置（例: `A5`）を選択します。
+3. **`Start`** ボタンをクリックすると上から順に連続自動実行され、 **`Step`** ボタンをクリックすると 1 行ずつステップ実行して取得結果がシート上に記録されます。
 
 ---
 
@@ -293,7 +318,7 @@ TermAddIn で実行される制御コマンドや通信シーケンスは、独�
 | **`Label`** | 結果出力先またはジャンプ先ラベルを指定するスタイル。 |
 | **`Work`** | マクロ内部の一時メモリ・バッファとして利用される領域（Excel 上では入力セル非生成）。 |
 
-### 3. 全101コマンド体系（Term 固有 67 コマンド ＋ 共通基盤 34 コマンド）
+### 3. 全130コマンド体系（Term 固有 7 ドメイン 67 コマンド ＋ 共通基盤 7 ドメイン 63 コマンド）
 * **[COM ポート通信（6 コマンド）](https://github.com/Monaca-App/TermAddIn_Comm)**: `Com_Open`, `Com_Close`, `Com_Send`, `Com_SendFile`, `Com_WaitPrompt`, `Com_Mode`
 * **[Telnet 通信（6 コマンド）](https://github.com/Monaca-App/TermAddIn_Telnet)**: `Telnet_Open`, `Telnet_Close`, `Telnet_Send`, `Telnet_SendFile`, `Telnet_WaitPrompt`, `Telnet_Mode`
 * **[Modbus 通信（5 コマンド）](https://github.com/Monaca-App/TermAddIn_Modbus)**: `Modbus_Open`, `Modbus_Close`, `Modbus_Read`, `Modbus_Write`, `Modbus_Mode`
@@ -301,7 +326,7 @@ TermAddIn で実行される制御コマンドや通信シーケンスは、独�
 * **[MELSEC MCプロトコル通信（9 コマンド）](https://github.com/Monaca-App/TermAddIn_MelcoMC)**: `Mc_Open`, `Mc_Close`, `Mc_Mode`, `Mc_ReadWord`, `Mc_WriteWord`, `Mc_ReadBit`, `Mc_WriteBit`, `Mc_Send`, `Mc_Receive`
 * **[オムロン FINS / Sysmac 通信（9 コマンド）](https://github.com/Monaca-App/TermAddIn_Omron)**: `Fins_Open`, `Fins_Close`, `Fins_Mode`, `Fins_ReadWord`, `Fins_WriteWord`, `Fins_ReadBit`, `Fins_WriteBit`, `Fins_Send`, `Fins_Receive`
 * **[キーエンス KV 上位リンク通信（9 コマンド）](https://github.com/Monaca-App/TermAddIn_Keyence)**: `Kv_Open`, `Kv_Close`, `Kv_Mode`, `Kv_ReadWord`, `Kv_WriteWord`, `Kv_ReadBit`, `Kv_WriteBit`, `Kv_Send`, `Kv_Receive`
-* **共通基盤（34 コマンド）**: パラメータ・サブルーチン・ループ制御（`Param_*`, `Call`, `Exit`, `Loop`, `Next`, `Break`）、配列操作（`Array_*`）、フロー・対話制御（`Jump`, `Judge`, `Wait`, `Ext_Call`, `Msg_Box`）、ファイル入出力（`Read_File`, `Write_File`, `Append_File`, `Read_Line`, `Write_Line`）、ワークバッファ処理（`Set_Data`, `Get_Line`, `Skip_Line`, `Skip_Data`, `Time_Stamp`）
+* **共通基盤 Core（全 63 コマンド / 7 ドメイン）**: パラメータ・変数演算（`Param`：12 件）、配列操作（`Array`：7 件）、シーケンス・呼出・ループ・フロー・エラートラップ制御（`Sequence`：22 件）、Excel シート順序制御（`Excel`：8 件）、ファイル入出力（`File`：5 件）、受信ワークバッファ抽出・タイムスタンプ（`Work`：5 件）、透過ポート通信制御（`Port`：4 件）
 
 各コマンドの詳細仕様は、[マクロスクリプト取扱説明書](./Manual/マクロスクリプト取扱説明書.Md) および [Excelアドイン取扱説明書](./Manual/Excelアドイン取扱説明書.Md) をご参照ください。
 
@@ -315,10 +340,10 @@ TermAddIn で実行される制御コマンドや通信シーケンスは、独�
   * ※ デスクトップ上の `Monaca` フォルダがデフォルトの配置先となります。
   * ※ 購入後にメール（送信元: `sales@monaca-app-store.com`）で届く各エクステンションのライセンスファイル（`TermAddIn_Comm.License` 等）も本設定ファイルと同じフォルダ（`%USERPROFILE%\Desktop\Monaca\`）に配置します。
 * **主な設定項目**:
-  * `TermAddIn_Styles`: 各セルの背景色、罫線スタイル、文字配置、列幅等の装飾テンプレート情報
-  * `Property` / `Command`: 登録されたマクロスクリプト（CSV）と各通信プラグインタブの構成情報
-  * `Comm` / `Telnet` / `Modbus`: COM ポート番号・ボーレート、接続先 IP アドレス・ポート番号、Modbus 伝送モード・局番等の通信パラメータ
-  * `Setting` (`Language`): UI 表示言語コード（`""` = 自動判別、`"ja-JP"` = 日本語、`"en-US"` = 英語）
+  * `Common` テーブル `Styles` セクション: 各セルの背景色、罫線スタイル、文字配置、列幅等の共通装飾テンプレート情報（全アドイン共通）
+  * `Common` テーブル `System` (`Language`): UI 表示言語コード（`""` = 自動判別、`"ja-JP"` = 日本語、`"en-US"` = 英語）
+  * `Properties` / `ModeSetting` / `Command`: 登録されたマクロスクリプト（CSV）と現在選択中の通信モード構成情報
+  * `Comm` / `Telnet` / `ModbusRTU` / `ModbusSocket` / `MELSEC` / `MELSEC_MC` / `OMRON_FINS` / `KEYENCE_KV`: 各プロトコル専用タブの COM ポート番号・ボーレート、接続先 IP アドレス・ポート番号、伝送モード・局番等の通信パラメータ
   * `Log`: 通信ログ・監査ログの出力先ディレクトリおよびログレベル（`Save`, `Info`, `Error` 等）
 * **共通除外キャッシュファイル (`IgnoredWorkbooks.txt`)**:
   * `Setting.xml` と同じディレクトリに全アドイン共通で自動生成され、シーケンスボタンを持たない通常 Excel ファイルのパスを保持して起動オーバーヘッドを防止します（ファイルを削除することで手動キャッシュクリアが可能）。
@@ -328,27 +353,28 @@ TermAddIn で実行される制御コマンドや通信シーケンスは、独�
 ## 💳 ライセンス・購入プラン（エクステンション別個別ライセンス）
 
 > [!NOTE]
-> **公開時期・無料評価期間およびエクステンション毎の個別ライセンス体系について**  
-> 本アドインは現在 **近日公開（リリース準備中）** であり、全エクステンションの全機能を無償でご試用いただける **無料評価期間は公開時に設定** いたします。  
-> TermAddIn では、必要な通信プロトコル（機能ドメイン）のみを柔軟に選択してご利用いただけるよう、 **エクステンション毎に個別のライセンスを設ける体系** を採用しております。  
-> 各エクステンションの正式販売料金およびお申込み受付開始時期は **現在検討中（未定）** です。公開時期、無料評価期間、および正式な価格・受付開始時期が決定次第、本ドキュメントおよび [Monaca アプリ工房ポータル](https://github.com/Monaca-App/store) にてご案内いたします。
+> **試用動作およびエクステンション毎の個別ライセンス体系について**  
+> 日付指定による無料評価期間は廃止しております。ライセンスファイルがない場合、または無効な場合は以下の試用モードで全通信プロトコルを動作確認できます。  
+> * **Excel アドイン（TermAddIn）**: ブック再オープン時、すでにシート上に記載されているボタンは無効化されます（オープン後に新規追加したボタンのみ動作確認可能です）。  
+> * **スタンドアロン起動（Term.exe）**: **3 分間の期間限定版** として動作し、3 分経過後に通知を表示して通信を停止・操作をロックします。  
+> TermAddIn では、必要な通信プロトコル（機能ドメイン）のみを柔軟に選択してご利用いただけるよう、 **エクステンション毎に個別のライセンスを設ける体系** を採用しております。
 
-正式リリース後は、用途や利用期間に合わせて、必要なエクステンション毎に一括購入（買い切り）またはサブスクリプション（月額・週額）からお選びいただける予定です。  
-メールアドレスの誤入力によるライセンス不着を防ぐため、 **事前のメールアドレス確認** を行った上で、 **Stripe** による安全なオンライン決済へご案内いたします。
+用途や利用期間に合わせて、必要なエクステンション毎に一括購入（買い切り）またはサブスクリプション（月額・週額）からお選びいただけます。  
+メールアドレスの誤入力によるライセンス不着を防ぐため、 **事前のメールアドレス確認** を行った上で、 **Stripe** による安全なオンライン決済へご案内いたします（表記価格はすべて税別です）。
 
 ### 📦 対象エクステンションおよびライセンスファイル一覧
 
-| エクステンション名 | 対象通信プロトコル | 対応ライセンスファイル | 価格プラン | お申込み |
+| エクステンション名 | 対象通信プロトコル | 対応ライセンスファイル | 価格プラン（一括 / 月額 / 週額・税別） | お申込み |
 | :--- | :--- | :--- | :---: | :---: |
-| **[TermAddIn_Comm](https://github.com/Monaca-App/TermAddIn_Comm)** | COM ポート・シリアル通信 (RS-232C / RS-422 / RS-485 / UART) | `TermAddIn_Comm.License` | **未定** | 準備中 |
-| **[TermAddIn_Telnet](https://github.com/Monaca-App/TermAddIn_Telnet)** | TCP/IP Telnet 端末通信 (ネットワーク機器・Linux 対話) | `TermAddIn_Telnet.License` | **未定** | 準備中 |
-| **[TermAddIn_Modbus](https://github.com/Monaca-App/TermAddIn_Modbus)** | 産業用 Modbus 通信 (Modbus RTU / Modbus ASCII / Modbus TCP) | `TermAddIn_Modbus.License` | **未定** | 準備中 |
-| **[TermAddIn_Melco](https://github.com/Monaca-App/TermAddIn_Melco)** | 三菱電機 PLC（MELSEC）計算機リンク通信 (シリアル/Ethernet 形式1〜5) | `TermAddIn_Melco.License` | **未定** | 準備中 |
-| **[TermAddIn_MelcoMC](https://github.com/Monaca-App/TermAddIn_MelcoMC)** | 三菱電機 PLC（MELSEC）MC プロトコル通信 (Ethernet 3Eフレーム) | `TermAddIn_MelcoMC.License` | **未定** | 準備中 |
-| **[TermAddIn_Omron](https://github.com/Monaca-App/TermAddIn_Omron)** | オムロン PLC（SYSMAC）FINS / HostLink 通信 (UDP / TCP / Serial) | `TermAddIn_Omron.License` | **未定** | 準備中 |
-| **[TermAddIn_Keyence](https://github.com/Monaca-App/TermAddIn_Keyence)** | キーエンス PLC（KV シリーズ）上位リンク通信 (Ethernet / Serial) | `TermAddIn_Keyence.License` | **未定** | 準備中 |
+| **[TermAddIn_Comm](https://github.com/Monaca-App/TermAddIn_Comm)** | COM ポート・シリアル通信 (RS-232C / RS-422 / RS-485 / UART) | `TermAddIn_Comm.License` | **¥32,000** / ¥3,000 / ¥1,000 | [👉 購入手続きへ](https://stripe-license-generator.y-nakai-5a3.workers.dev/?target=comm) |
+| **[TermAddIn_Telnet](https://github.com/Monaca-App/TermAddIn_Telnet)** | TCP/IP Telnet 端末通信 (ネットワーク機器・Linux 対話) | `TermAddIn_Telnet.License` | **¥32,000** / ¥3,000 / ¥1,000 | [👉 購入手続きへ](https://stripe-license-generator.y-nakai-5a3.workers.dev/?target=telnet) |
+| **[TermAddIn_Modbus](https://github.com/Monaca-App/TermAddIn_Modbus)** | 産業用 Modbus 通信 (Modbus RTU / Modbus ASCII / Modbus TCP) | `TermAddIn_Modbus.License` | **¥49,000** / ¥4,400 / ¥1,500 | [👉 購入手続きへ](https://stripe-license-generator.y-nakai-5a3.workers.dev/?target=modbus) |
+| **[TermAddIn_Melco](https://github.com/Monaca-App/TermAddIn_Melco)** | 三菱電機 PLC（MELSEC）計算機リンク通信 (シリアル/Ethernet 形式1〜5) | `TermAddIn_Melco.License` | **¥32,000** / ¥3,000 / ¥1,000 | [👉 購入手続きへ](https://stripe-license-generator.y-nakai-5a3.workers.dev/?target=melco) |
+| **[TermAddIn_MelcoMC](https://github.com/Monaca-App/TermAddIn_MelcoMC)** | 三菱電機 PLC（MELSEC）MC プロトコル通信 (Ethernet 3Eフレーム) | `TermAddIn_MelcoMC.License` | **¥32,000** / ¥3,000 / ¥1,000 | [👉 購入手続きへ](https://stripe-license-generator.y-nakai-5a3.workers.dev/?target=melcomc) |
+| **[TermAddIn_Omron](https://github.com/Monaca-App/TermAddIn_Omron)** | オムロン PLC（SYSMAC）FINS / HostLink 通信 (UDP / TCP / Serial) | `TermAddIn_Omron.License` | **¥49,000** / ¥4,400 / ¥1,500 | [👉 購入手続きへ](https://stripe-license-generator.y-nakai-5a3.workers.dev/?target=omron) |
+| **[TermAddIn_Keyence](https://github.com/Monaca-App/TermAddIn_Keyence)** | キーエンス PLC（KV シリーズ）上位リンク通信 (Ethernet / Serial) | `TermAddIn_Keyence.License` | **¥49,000** / ¥4,400 / ¥1,500 | [👉 購入手続きへ](https://stripe-license-generator.y-nakai-5a3.workers.dev/?target=keyence) |
 
-### 📋 ご購入・ライセンス発行の流れ（予定）
+### 📋 ご購入・ライセンス発行の流れ
 1. **メールアドレス確認**: 各エクステンションのリンクから、ライセンスファイルを受信するメールアドレスを入力して送信します。
 2. **決済案内メールの受信**: 入力したアドレス宛てに、送信用メールアドレス **「sales@monaca-app-store.com」** より決済リンクのご案内メールが即時届きます。
 3. **Stripe 決済**: 届いたメール内のご希望プランのボタンをクリックし、カード情報とともに、ご利用PCの **「PC名」** および **「ユーザー名」** を入力して決済を完了します。
@@ -404,7 +430,7 @@ TermAddIn で実行される制御コマンドや通信シーケンスは、独�
 
 1. **ライセンスファイルの配置先**:
    * **配置パス**: `%USERPROFILE%\Desktop\Monaca\TermAddIn_<Ext>.License`  
-     （例: `TermAddIn_Comm.License`, `TermAddIn_Telnet.License`, `TermAddIn_Modbus.License`, `TermAddIn_Melco.License`, `TermAddIn_MelcoMC.License`）  
+     （例: `TermAddIn_Comm.License`, `TermAddIn_Telnet.License`, `TermAddIn_Modbus.License`, `TermAddIn_Melco.License`, `TermAddIn_MelcoMC.License`, `TermAddIn_Omron.License`, `TermAddIn_Keyence.License`）  
      （エクスプローラーのアドレスバーに `%USERPROFILE%\Desktop\Monaca` と入力して開くか、デスクトップ上の `Monaca` フォルダを開きます）
    * ※ インストール時に配置パスを変更した場合は、そちらに配置してください。
 2. **ライセンスの有効化（アクティベーション）**:

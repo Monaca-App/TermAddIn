@@ -25,8 +25,8 @@
 | 引数1 | TargetKey | 操作対象の 2 次元テーブルを保持するパラメータキー名（必須）。 | 自コマンド内の `PARAM` キー名（例: `"DATA_TABLE"`, `"1"`） |
 | 引数2 | XIndex | 設定先の列インデックス（0 始まり・必須）。 | 0 以上の整数（例: `"0"`, `"2"`）または `$PARAM$` 置換 |
 | 引数3 | YIndex | 設定先の行インデックス（0 始まり・必須）。 | 0 以上の整数（例: `"0"`, `"1"`）または `$PARAM$` 置換 |
-| 引数4 | Delimiter | 列区切りデリミタ文字列（必須）。 | `","`（カンマ）、`"\t"`（タブ）等 |
-| 引数5 | NewValue | 指定セルへ書き込む文字列または数値（必須）。 | 任意の文字列・数値または `$PARAM$` 置換 |
+| 引数4 | `Delimiter` | 列区切りデリミタ文字列（必須）。 | `","`（カンマ）、`"\t"`（タブ）等 |
+| 引数5 | `NewValue` | 指定セルへ書き込む文字列または数値（任意・省略可・既定値: `""`）。 | 任意の文字列・数値、`$PARAM$` 置換、または省略（空文字クリア） |
 
 ---
 
@@ -37,7 +37,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: 引数 4 にカンマを指定する場合や、引数 5 の値にカンマを含める場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `ArraySet`, `GpibArray_Set`, `Analysis_Term_Array_Set`
+* **エイリアス（別名）**: `Gpib_Array_Set`, `Term_Array_Set`, `Analysis_Term_Array_Set`
 
 ---
 
@@ -60,7 +60,7 @@ COMMAND, "RECORD_CELL_DATA", "DATA_TABLE"
 
 ### 実行時の挙動・変数変化
 
-* **実行前の状態**: ステップ `010` により `"DATA_TABLE"` が `","\r\n","`（2 列×2 行の空テーブル）の状態。
+* **実行前の状態**: ステップ `010` により `"DATA_TABLE"` が `",\r\n,"`（2 列×2 行の空テーブル）の状態。
 * **実行後の状態**: ステップ `020`・`030` の実行により、1 行目（Y=0）の 1 列目（X=0）が `"CH1"`、2 列目（X=1）が `"5.012"` となり、`"DATA_TABLE"` は `"CH1,5.012\r\n,"` に更新されます。
 
 ---
@@ -74,22 +74,21 @@ sequenceDiagram
     autonumber
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "Array_SetCommand"
-    participant Target as "TargetResolver / パラメータ辞書"
+    participant Target as "TargetResolver / ArrayStorage"
     participant Buffer as "TableBuffer (2次元テーブル処理)"
 
-    Engine->>Cmd: ExecuteAsync(TargetKey, XIndex, YIndex, Delimiter, NewValue)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
-    Cmd->>Cmd: XIndex, YIndex の数値検証 (>= 0)
-    alt XIndex >= 0 かつ YIndex >= 0
-        Cmd->>Target: GetTargetValue(TargetKey)
-        Target-->>Cmd: 現在のテーブル文字列
-        Cmd->>Buffer: SetCellWithAutoResize(XIndex, YIndex, Delimiter, NewValue)
-        Buffer-->>Cmd: 更新・自動拡張後のテーブル文字列
-        Cmd->>Target: SetTargetValue(TargetKey, UpdatedTableText)
-        Cmd-->>Engine: 実行完了 (Success)
-    else 負のインデックス指定 または 未定義ターゲット
+    Cmd->>Target: TryResolve(TargetKey, context, out targetBuffer) ＆ TryResolveAndParseInt(XIndex, YIndex)
+    alt ターゲット解決成功 かつ XIndex >= 0 かつ YIndex >= 0 (上限内)
+        Target-->>Cmd: currentText = targetBuffer.Value
+        Cmd->>Buffer: SetCellWithAutoResize(currentText, XIndex, YIndex, Delimiter, NewValue)
+        Buffer-->>Cmd: updatedText
+        Cmd->>Target: targetBuffer.Value = updatedText ＆ ArrayStorage.SetTable(Key, TableBuffer.Parse(...))
+        Cmd-->>Engine: AnalysisResult.Success(...)
+    else 負のインデックス指定 / 上限超過 / 未定義ターゲット
         Cmd->>Cmd: エラーログ出力 (_log.LogError)
-        Cmd-->>Engine: 実行失敗・即時中断 (Halt)
+        Cmd-->>Engine: AnalysisResult.Halt(errMsg, errorCode)
     end
     deactivate Cmd
 ```
@@ -121,7 +120,8 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | 既存範囲内セルへの設定（`X=1, Y=0, Val="OK"`） | 該当セルが `"OK"` に更新され他セルは保持される | 2次元セル代入の基本動作検証 |
-| **2** | 正常系 | 空テーブルに対する範囲外座標設定（`X=2, Y=1, Val="EXT"`） | 3列×2行へ自動拡張され `(2, 1)` に `"EXT"` が格納される | Auto-Resize（自動拡張）機能の検証 |
-| **3** | 異常系 | 負のインデックス指定（`X=-1, Y=0`） | エラーログが出力され `Failure` で安全停止する | 不正インデックス防御の検証 |
+| **1** | 正常系 | 2列×2行テーブル `"DATA_TABLE"`（初期値 `",\r\n,"`）に対し `(0,0)="CH1"`、`(1,0)="$MEAS_VAL$"`（`"5.012"`）を設定 | `"DATA_TABLE"` が `"CH1,5.012\r\n,"` に更新され `Success` が返る | 既存範囲内セル代入および `$PARAM$` 展開の検証 |
+| **2** | 正常系 | 既存テーブルに対する範囲外座標設定 `("DATA_TABLE", "2", "2", ",", "EXT")` | 3列×3行へ自動拡張され `"CH1,5.012\r\n,\r\n,,EXT"` が格納される | Auto-Resize（自動拡張）機能の検証 |
+| **3** | 異常系 | 負のインデックス指定 `("DATA_TABLE", "-1", "0", ",", "NG")` | エラーログが出力され `Halt` で安全停止する | 負数座標指定時の防御ガード検証 |
+| **4** | 異常系 | 未定義ターゲットパラメータ指定 `("NO_SUCH_KEY", "0", "0", ",", "VAL")` | エラーログが出力され `Halt` で安全停止する | 未定義ターゲットキーアクセス防御の検証 |
 

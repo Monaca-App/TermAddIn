@@ -1,0 +1,53 @@
+; ==============================================================================
+; Common.Core.Commands Sample: Param ドメイン (全12コマンド網羅)
+; 対象: Param_Set / Param_Get / Param_Add / Param_Mul / Param_Div / Param_Mod
+;       ParamSub / ParamInc / ParamDec / ParamHexAdd / CalcExpression / Param_Move
+; ==============================================================================
+TITLE, "Core Param 変数演算サンプル"
+
+COMMAND, "ARITH_DEMO", "RESULT_DATA"
+,PARAM, BASE_VAL, Text, "初期値", "100"
+,PARAM, ADD_VAL, Text, "加算値", "25"
+,PARAM, MUL_VAL, Text, "乗算値", "2"
+,PARAM, DIV_VAL, Text, "除算値", "5"
+,PARAM, MOD_VAL, Text, "剰余除数", "7"
+,PARAM, RESULT_DATA, Text, "演算結果", ""
+,SEQUENCE, 10, Param_Add, "ARITH_DEMO", "BASE_VAL", "$ADD_VAL$"
+,SEQUENCE, 20, Param_Mul, "ARITH_DEMO", "BASE_VAL", "$MUL_VAL$"
+,SEQUENCE, 30, Param_Div, "ARITH_DEMO", "BASE_VAL", "$DIV_VAL$"
+,SEQUENCE, 40, Param_Mod, "ARITH_DEMO", "BASE_VAL", "$MOD_VAL$"
+,SEQUENCE, 50, Param_Move, "ARITH_DEMO", "BASE_VAL", "ARITH_DEMO", "RESULT_DATA"
+,SEQUENCE, 60, Exit
+
+COMMAND, "INC_DEC_DEMO", "RESULT_DATA"
+,PARAM, VAL_DEC, Text, "10進値", "50"
+,PARAM, SUB_VAL, Text, "減算値", "10"
+,PARAM, VAL_HEX, Text, "16進値", "0x0010"
+,PARAM, HEX_ADD, Text, "16進加算値", "0x000A"
+,PARAM, RESULT_DATA, Text, "結果(16進加算後)", ""
+,SEQUENCE, 10, ParamSub, "VAL_DEC", "$SUB_VAL$"
+,SEQUENCE, 20, ParamInc, "VAL_DEC", "5"
+,SEQUENCE, 30, ParamDec, "VAL_DEC", "2"
+,SEQUENCE, 40, ParamHexAdd, "VAL_HEX", "$HEX_ADD$"
+,SEQUENCE, 50, Param_Move, "INC_DEC_DEMO", "VAL_HEX", "INC_DEC_DEMO", "RESULT_DATA"
+,SEQUENCE, 60, Exit
+
+COMMAND, "CALC_EXPR", "RESULT_DATA"
+,PARAM, EXPR_TEXT, Text, "算術数式", "(10 + 20) * 3 / 2"
+,PARAM, RESULT_DATA, Text, "評価結果", ""
+,SEQUENCE, 10, CalcExpression, "RESULT_DATA", "$EXPR_TEXT$"
+,SEQUENCE, 20, Exit
+
+COMMAND, "SUB_CALL_DEMO", "RESULT_DATA"
+,PARAM, INPUT_NUM, Text, "入力数値", "12"
+,PARAM, RESULT_DATA, Text, "サブルーチン結果", ""
+,SEQUENCE, 10, Param_Set, "SUB_DOUBLE", "$INPUT_NUM$", "IN_VAL"
+,SEQUENCE, 20, Call, "SUB_DOUBLE"
+,SEQUENCE, 30, Param_Get, "SUB_DOUBLE", "RESULT_DATA", "OUT_VAL"
+,SEQUENCE, 40, Exit
+
+COMMAND, "SUB_DOUBLE"
+,PARAM, IN_VAL, Text, "入力値", "0"
+,PARAM, OUT_VAL, Work, "出力値", "0"
+,SEQUENCE, 10, CalcExpression, "OUT_VAL", "$IN_VAL$ * 2"
+,SEQUENCE, 20, Exit

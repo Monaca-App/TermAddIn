@@ -22,11 +22,11 @@
 
 | 引数位置 | 引数名 | 説明 | 指定方法 / 有効な入力値 |
 | :--- | :--- | :--- | :--- |
-| 引数1 | TargetKey | 切り出した 부분テーブルを格納するパラメータキー名（必須）。 | 自コマンド内の `PARAM` キー名（例: `"SUB_TABLE"`, `"2"`） |
-| 引数2 | SourceKey | 切り出し元の 2 次元テーブルを保持するパラメータキー名（必須）。 | 自コマンド内の `PARAM` キー名（例: `"RAW_TABLE"`, `"1"`） |
-| 引数3 | PointX | X 軸（列方向）の切り出し範囲 `"<開始列>-<列数>"` または単一列番号（必須）。 | `"1-2"`（1列目から2列分）または `"1"`（1列目のみ、0始まり） |
-| 引数4 | PointY | Y 軸（行方向）の切り出し範囲 `"<開始行>-<行数>"` または単一行番号（必須）。 | `"0-3"`（0行目から3行分）または `"0"`（0行目のみ、0始まり） |
-| 引数5 | Delimiter | 列区切りデリミタ文字列（任意・省略可・既定値: `","`）。 | `","`（カンマ）、`"\t"`（タブ）等 |
+| 引数1 | `TargetKey` | 切り出した部分テーブルを格納するパラメータキー名（必須）。 | 自コマンド内の `PARAM` キー名（例: `"SUB_TABLE"`, `"2"`） |
+| 引数2 | `SourceKey` | 切り出し元の 2 次元テーブルを保持するパラメータキー名（必須）。 | 自コマンド内の `PARAM` キー名（例: `"RAW_TABLE"`, `"1"`） |
+| 引数3 | `PointX` | X 軸（列方向）の切り出し範囲 `"<開始列>-<列数>"` または単一列番号（必須）。 | `"1-2"`（1列目から2列分）または `"1"`（1列目のみ、0始まり） |
+| 引数4 | `PointY` | Y 軸（行方向）の切り出し範囲 `"<開始行>-<行数>"` または単一行番号（必須）。 | `"0-3"`（0行目から3行分）または `"0"`（0行目のみ、0始まり） |
+| 引数5 | `Delimiter` | 列区切りデリミタ文字列（任意・省略可・既定値: `","`）。 | `","`（カンマ）、`"\t"`（タブ）等 |
 
 ---
 
@@ -37,7 +37,7 @@
 * **ジャンプ先指定（`#`）**: 本コマンドはジャンプ制御を行わないため適用されません。（適用可能な引数: 非適用）
 * **共通コマンド指定（`@`）**: 本コマンドは外部マクロを呼び出さないため適用されません。（適用可能な引数: 非適用）
 * **カンマのエスケープ**: 引数 5 にカンマを指定する場合は、必ず `","` と二重引用符で囲んで記述します。
-* **エイリアス（別名）**: `ArraySplit`, `GpibArray_Split`, `Analysis_Term_Array_Split`
+* **エイリアス（別名）**: `Gpib_Array_Split`, `Term_Array_Split`, `Analysis_Term_Array_Split`
 
 ---
 
@@ -71,22 +71,21 @@ sequenceDiagram
     autonumber
     participant Engine as "シーケンス実行エンジン"
     participant Cmd as "Array_SplitCommand"
-    participant Target as "TargetResolver / パラメータ辞書"
+    participant Target as "TargetResolver / ArrayStorage"
     participant Buffer as "TableBuffer (2次元テーブル処理)"
 
-    Engine->>Cmd: ExecuteAsync(TargetKey, SourceKey, PointX, PointY, Delimiter)
+    Engine->>Cmd: ExecuteAsync(context, args, cancellationToken)
     activate Cmd
-    Cmd->>Cmd: PointX, PointY の範囲式解析 (Start, Length)
-    alt 有効な範囲指定 (Start >= 0, Length >= 1)
-        Cmd->>Target: GetTargetValue(SourceKey)
-        Target-->>Cmd: 元テーブル文字列
-        Cmd->>Buffer: SliceSubTable(SourceText, StartX, CountX, StartY, CountY, Delimiter)
-        Buffer-->>Cmd: 切り出し後の矩形テーブル文字列 (不足セルは空文字補完)
-        Cmd->>Target: SetTargetValue(TargetKey, SubTableText)
-        Cmd-->>Engine: 実行完了 (Success)
-    else 範囲指定フォーマット不正 または 未定義キー
+    Cmd->>Target: TryResolve(TargetKey, out targetBuffer) ＆ TryResolve(SourceKey, out sourceBuffer)
+    Cmd->>Target: TryParseSliceRange(PointX, PointY) ＆ TryExpandMacroTokens(Delimiter)
+    alt バッファ解決成功 かつ 有効な範囲指定 (start >= 0, count >= 1, 上限内)
+        Cmd->>Buffer: SliceSubTable(sourceBuffer.Value, startX, countX, startY, countY, delimiter)
+        Buffer-->>Cmd: 切り出し後の矩形テーブル文字列 slicedText (不足セルは空文字補完)
+        Cmd->>Target: targetBuffer.Value = slicedText ＆ ArrayStorage.SetTable(Key, TableBuffer.Parse(...))
+        Cmd-->>Engine: AnalysisResult.Success(...)
+    else 範囲指定フォーマット不正 / 上限超過 / 未定義キー
         Cmd->>Cmd: エラーログ出力 (_log.LogError)
-        Cmd-->>Engine: 実行失敗・即時中断 (Halt)
+        Cmd-->>Engine: AnalysisResult.Halt(errMsg, errorCode)
     end
     deactivate Cmd
 ```
@@ -120,5 +119,5 @@ sequenceDiagram
 | :---: | :--- | :--- | :--- | :--- |
 | **1** | 正常系 | 3×3 テーブルから `PointX="1-2", PointY="0-2"` を切り出し | 指定された 2×2 部分テーブルが `<TargetKey>` に格納される | 矩形スライスの基本動作検証 |
 | **2** | 正常系 | 元テーブルサイズを超える範囲（`PointX="2-3"`）を指定 | 超過列が空セルで補完された 3 列テーブルが生成される | 範囲外自動パディングの検証 |
-| **3** | 異常系 | 不正な範囲文字列（`PointX="INVALID"`）を指定 | エラーログが出力され `Failure` で安全停止する | 範囲式パースエラー時の防御検証 |
+| **3** | 異常系 | 不正な範囲文字列（`PointX="INVALID"`）を指定 | エラーログが出力され `Halt` で安全停止する | 範囲式パースエラー時の防御検証 |
 

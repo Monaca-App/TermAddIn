@@ -68,14 +68,15 @@ sequenceDiagram
     participant Cmd as "ClearErrorCommand"
     participant Ctx as "実行コンテキスト変数辞書"
 
-    Engine->>Cmd: ExecuteAsync()
+    Engine->>Cmd: ExecuteAsync(args)
     activate Cmd
-    alt 実行コンテキストが有効な場合
+    alt 余剰引数が指定されていない場合
         Cmd->>Ctx: SetVariable("$ERROR_CODE$", "0")
         Cmd->>Ctx: SetVariable("$ERROR_MESSAGE$", "")
         Cmd-->>Engine: 実行完了 (Success)
-    else 余剰引数が誤って指定された場合
-        Cmd-->>Engine: パイプライン検証失敗 (Failed)
+    else 非空白の余剰引数が指定された場合
+        Cmd->>Cmd: エラーログ出力 (_log.LogError)
+        Cmd-->>Engine: 余剰引数エラー・安全停止 (Halt: -10)
     end
     deactivate Cmd
 ```
@@ -87,9 +88,9 @@ sequenceDiagram
 入力データの異常や実行時エラーに対し、解析・実行エンジンが実行するセーフティ規約です。
 
 1. **冪等（Idempotent）なクリア動作**:
-   - エラーが発生していない正常状態で `ClearError` を何度実行しても副作用や例外を発生させず、常に `$ERROR_CODE$ = "0"` を保証します。
-2. **不要な余剰引数の誤記述検出**:
-   - 空の `CommandParameterSpec` により、誤って不要な引数が付与された場合は実行前にパラメータ検証で検出されます。
+   - エラーが発生していない正常状態で `ClearError` を何度実行しても副作用や例外を発生させず、常に `$ERROR_CODE$ = "0"` および `$ERROR_MESSAGE$ = ""` を保証します。
+2. **不要な余剰引数指定時の実行時 `Halt` 防御**:
+   - 誤って非空白の余剰引数が付与された場合は、`ExecuteAsync` 内で `_log.LogError` を記録した上で `AnalysisResult.Halt`（エラーコード `-10`）を返して安全に停止します。
 
 ---
 
@@ -107,6 +108,6 @@ sequenceDiagram
 
 | No | テストカテゴリ | テスト条件（入力値） | 期待される結果（出力値） | 検証の目的 / 観点 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | 正常系 | `$ERROR_CODE$="-100"`, `$ERROR_MESSAGE$="Some error"` 状態で引数なし実行 | `$ERROR_CODE$ == "0"` かつ `$ERROR_MESSAGE$ == ""` に初期化 | エラーステータスリセット動作の検証 |
-| **2** | 異常系 | 不要な余剰引数を渡して検証パイプラインを実行 | `IsValid == false` となり誤記述を検出 | 引数仕様境界の検証 |
+| **1** | 正常系 | `$ERROR_CODE$="-100"`, `$ERROR_MESSAGE$="Some error"` 状態で引数なし実行 | `Status == Success` となり、`$ERROR_CODE$ == "0"` かつ `$ERROR_MESSAGE$ == ""` に初期化 | エラーステータスリセット動作の検証 |
+| **2** | 異常系 | 不要な余剰引数 `("UNEXPECTED")` を指定して `ExecuteAsync` を実行 | エラーログが出力され `Status == Halt`（`-10`）で安全拒否 | 余剰引数指定時の境界防御検証 |
 
