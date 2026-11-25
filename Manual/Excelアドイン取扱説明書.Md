@@ -38,7 +38,7 @@
 3. **クリーンな終了処理** :
    * シートの操作や連続実行を終了して Excel を閉じた際、バックグラウンドに不要な Excel プロセスが残らないよう安全にリソースを解放します。
 4. **オフラインマニュアル・サンプルの標準インストール連携** :
-   * インストーラーにより HTML 形式の取扱説明書一式は `C:\Program Files (x86)\Monacaアプリ工房\Monaca html\Apr\` に、各通信プロトコルのサンプル資材は `C:\Program Files (x86)\Monacaアプリ工房\Monaca Sample\` に配置され、デスクトップの `Monaca\Manual\` および `Monaca\Sample` ショートカットからすぐに参照できます。
+   * インストーラーにより HTML 形式の取扱説明書一式は `C:\Program Files (x86)\Monaca_App_Store\Monaca html\Apr\` に、各通信プロトコルのサンプル資材は `C:\Program Files (x86)\Monaca_App_Store\Monaca Sample\` に配置され、デスクトップの `Monaca\Manual\` および `Monaca\Sample` ショートカットからすぐに参照できます。
 
 ### 🚀 はじめての Excel 自動実行シート作成（4 ステップ具体例）
 Excel アドインを初めて使う方は、以下の 4 ステップで「通信接続 → データ読出 → 切断」の自動実行シートを 3 分で作成できます。
