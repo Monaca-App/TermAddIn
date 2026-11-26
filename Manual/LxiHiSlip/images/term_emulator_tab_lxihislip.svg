@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="510" viewBox="0 0 880 510">
+  <defs>
+    <filter id="cardShadow" x="-2%" y="-2%" width="104%" height="106%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.14" />
+    </filter>
+    <style>
+      .ui { font-family: 'Yu Gothic UI', 'Meiryo UI', 'Segoe UI', sans-serif; }
+      .mono { font-family: 'Consolas', 'BIZ UDGothic', 'MS Gothic', monospace; }
+      .lbl { font-family: 'Yu Gothic UI', 'Meiryo UI', sans-serif; font-size: 11px; font-weight: 700; fill: #1E293B; }
+      .sub { font-family: 'Yu Gothic UI', 'Meiryo UI', sans-serif; font-size: 10.5px; fill: #475569; }
+      .inp { fill: #FFFFFF; stroke: #94A3B8; stroke-width: 1.2; rx: 3; }
+      .grp { fill: #FFFFFF; stroke: #CBD5E1; stroke-width: 1.1; rx: 5; }
+      .grp-hdr { font-family: 'Yu Gothic UI', 'Meiryo UI', sans-serif; font-size: 11.5px; font-weight: 700; fill: #1E3A8A; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="880" height="510" fill="#F8FAFC" rx="10" />
+  <text x="24" y="25" class="ui" font-size="13.5" font-weight="700" fill="#0F172A">[LXI HiSLIP] 高速 2ch・TLS 仮想計測器タブ画面（TermAnalysis.LxiHiSlip.dll 内蔵）</text>
+
+  <rect x="616" y="9" width="240" height="22" rx="11" fill="#DBEAFE" stroke="#3B82F6" stroke-width="1" />
+  <text x="736" y="24" class="ui" font-size="10.2" font-weight="700" fill="#1D4ED8" text-anchor="middle">✓ TermAddIn_LxiHiSlip.License 共用</text>
+
+  <path d="M 28 66 L 28 44 Q 28 40 32 40 L 130 40 Q 134 40 134 44 L 134 66 Z" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="1" />
+  <text x="81" y="57" class="ui" font-size="10.5" font-weight="600" fill="#475569" text-anchor="middle">接続・フレーミング</text>
+  <path d="M 138 66 L 138 44 Q 138 40 142 40 L 232 40 Q 236 40 236 44 L 236 66 Z" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="1" />
+  <text x="187" y="57" class="ui" font-size="10.5" font-weight="600" fill="#475569" text-anchor="middle">自動応答ルール</text>
+  <path d="M 240 66 L 240 44 Q 240 40 244 40 L 302 40 Q 306 40 306 44 L 306 66 Z" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="1" />
+  <text x="273" y="57" class="ui" font-size="10.2" font-weight="600" fill="#475569" text-anchor="middle">異常注入</text>
+  <path d="M 310 66 L 310 44 Q 310 40 314 40 L 366 40 Q 370 40 370 44 L 370 66 Z" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="1" />
+  <text x="340" y="57" class="ui" font-size="10.2" font-weight="600" fill="#475569" text-anchor="middle">定周期</text>
+
+  <path d="M 374 67 L 374 39 Q 374 35 378 35 L 492 35 Q 496 35 496 39 L 496 67 Z" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.8" />
+  <text x="435" y="56" class="ui" font-size="11.5" font-weight="700" fill="#1D4ED8" text-anchor="middle">LXI HiSLIP</text>
+  <text x="508" y="56" class="sub" font-size="9.8">※ ヘッダ「プロトコル: LXI HiSLIP」選択時のみ表示</text>
+
+  <g filter="url(#cardShadow)">
+    <rect x="24" y="66" width="832" height="420" rx="5" fill="#F8FAFC" stroke="#2563EB" stroke-width="1.5" />
+  </g>
+  <line x1="375" y1="66" x2="495" y2="66" stroke="#F8FAFC" stroke-width="2.5" />
+
+  <rect x="38" y="80" width="804" height="38" rx="5" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1.2" />
+  <text x="54" y="104" class="ui" font-size="11.5" font-weight="700" fill="#1E3A8A">HiSLIP 1.1 / 2.0 仮想計測器（TCP 4880 同期・非同期 2 接続 SessionID 紐付け模擬）</text>
+
+  <!-- ① セッション・TLS 設定 -->
+  <rect x="38" y="128" width="804" height="122" class="grp" />
+  <text x="52" y="149" class="grp-hdr">① HiSLIP バージョン・サブアドレス・TLS 2.0 模擬設定</text>
+
+  <text x="52" y="178" class="lbl">公開サブアドレス:</text>
+  <rect x="164" y="161" width="130" height="24" class="inp" />
+  <text x="174" y="177" class="mono" font-size="11" fill="#0F172A">hislip0</text>
+
+  <text x="314" y="178" class="lbl">応答モード:</text>
+  <rect x="388" y="161" width="160" height="24" class="inp" />
+  <text x="468" y="177" class="mono" font-size="11" font-weight="700" fill="#0F172A" text-anchor="middle">Overlap Mode ▼</text>
+
+  <text x="566" y="178" class="lbl">最大メッセージ長:</text>
+  <rect x="676" y="161" width="146" height="24" class="inp" />
+  <text x="749" y="177" class="mono" font-size="11" fill="#0F172A" text-anchor="middle">16,777,216 B</text>
+
+  <rect x="52" y="198" width="14" height="14" rx="2" fill="#2563EB" />
+  <path d="M 55 205 L 58 208 L 63 201" stroke="#FFFFFF" stroke-width="1.8" fill="none" />
+  <text x="72" y="210" class="ui" font-size="10.8" fill="#1E293B">HiSLIP 2.0 StartTLS を受理する（テスト用自己署名証明書を自動生成して SslStream 暗号化）</text>
+
+  <rect x="52" y="224" width="14" height="14" rx="2" fill="#2563EB" />
+  <path d="M 55 231 L 58 234 L 63 227" stroke="#FFFFFF" stroke-width="1.8" fill="none" />
+  <text x="72" y="236" class="ui" font-size="10.8" fill="#1E293B">mDNS 仮想アドバタイザ有効（_hislip._tcp.local）＆ HTTPS Identification 応答対応</text>
+
+  <!-- ② 対応 HiSLIP メッセージ種別 -->
+  <rect x="38" y="260" width="804" height="94" class="grp" />
+  <text x="52" y="281" class="grp-hdr">② 対応 HiSLIP バイナリメッセージ（同期・非同期チャネル）許可設定</text>
+
+  <g transform="translate(52, 294)">
+    <rect x="0" y="0" width="14" height="14" rx="2" fill="#2563EB" /><path d="M 3 7 L 6 10 L 11 3" stroke="#FFFFFF" stroke-width="1.8" fill="none" />
+    <text x="20" y="12" class="mono" font-size="10.8" fill="#0F172A">Initialize / AsyncInitialize</text>
+    <rect x="270" y="0" width="14" height="14" rx="2" fill="#2563EB" /><path d="M 273 7 L 276 10 L 281 3" stroke="#FFFFFF" stroke-width="1.8" fill="none" />
+    <text x="290" y="12" class="mono" font-size="10.8" fill="#0F172A">Data / DataEnd (大容量波形)</text>
+    <rect x="556" y="0" width="14" height="14" rx="2" fill="#2563EB" /><path d="M 559 7 L 562 10 L 567 3" stroke="#FFFFFF" stroke-width="1.8" fill="none" />
+    <text x="576" y="12" class="mono" font-size="10.8" fill="#0F172A">AsyncStatusQuery (STB)</text>
+
+    <rect x="0" y="28" width="14" height="14" rx="2" fill="#2563EB" /><path d="M 3 35 L 6 38 L 11 31" stroke="#FFFFFF" stroke-width="1.8" fill="none" />
+    <text x="20" y="40" class="mono" font-size="10.8" fill="#0F172A">AsyncDeviceClear / Clear</text>
+    <rect x="270" y="28" width="14" height="14" rx="2" fill="#2563EB" /><path d="M 273 35 L 276 38 L 281 31" stroke="#FFFFFF" stroke-width="1.8" fill="none" />
+    <text x="290" y="40" class="mono" font-size="10.8" fill="#0F172A">AsyncLock (排他・共有ロック)</text>
+    <rect x="556" y="28" width="14" height="14" rx="2" fill="#2563EB" /><path d="M 559 35 L 562 38 L 567 31" stroke="#FFFFFF" stroke-width="1.8" fill="none" />
+    <text x="576" y="40" class="mono" font-size="10.8" fill="#0F172A">AsyncServiceRequest (SRQ)</text>
+  </g>
+
+  <!-- ③ FatalError / Error 模擬 -->
+  <rect x="38" y="364" width="804" height="108" rx="5" fill="#FFFBEB" stroke="#F59E0B" stroke-width="1.2" />
+  <text x="52" y="385" class="ui" font-size="11.5" font-weight="700" fill="#92400E">③ HiSLIP Error / FatalError 異常模擬設定</text>
+
+  <text x="52" y="415" class="lbl">異常応答:</text>
+  <rect x="132" y="398" width="400" height="25" fill="#FFFFFF" stroke="#D97706" stroke-width="1.2" rx="3" />
+  <text x="142" y="415" class="ui" font-size="11" font-weight="700" fill="#0F172A">通常応答（正常処理） ▼</text>
+
+  <text x="548" y="415" class="lbl">発動条件:</text>
+  <rect x="612" y="398" width="212" height="25" class="inp" />
+  <text x="622" y="415" class="ui" font-size="10.8" fill="#334155">常時 / N回周期 / 確率指定 ▼</text>
+
+  <text x="52" y="447" class="sub">模擬可能エラー: Unidentified Error / Poorly Formed Header / Lock Denied / TLS Handshake Failure</text>
+  <text x="52" y="463" class="mono" font-size="10" fill="#64748B">実装配置: Apr/Term/ExtAnalysis/TermAnalysis.LxiHiSlip/Simulation/LxiHiSlipSlaveSimulator.cs</text>
+</svg>

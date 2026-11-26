@@ -50,12 +50,12 @@
   * **[オムロン FINS / Sysmac 通信（`Omron`）](https://github.com/Monaca-App/TermAddIn_Omron)**: **FINS/UDP（ポート 9600）** 、 **FINS/TCP（自動ノード通知ハンドシェイク付き）** 、および **シリアル HostLink（FCS 自動計算）** の全3方式に対応。SYSMAC CS/CJ/CP/NJ/NX シリーズの各メモリエリア（DM, CIO, WR, HR, AR, EM 等）をコマンド1行で制御できます。
   * **[キーエンス KV 上位リンク通信（`Keyence`）](https://github.com/Monaca-App/TermAddIn_Keyence)**: **Ethernet TCP/UDP 上位リンク（標準ポート 8501）** および **RS-232C シリアル上位リンク（自動 `CR`/`CQ` 対応）** に対応。KV-8000〜KV-Nano の DM/EM/W/MR/R 等をデータ形式サフィックス（`.U`/`.S`/`.H`/`.D`/`.L`）付きで高速制御できます。
 * **将来拡張予定のエクステンション・ラインナップ（順次拡張予定・選択購入方式）**:
-  * **LAN 計測器・基本通信 ①：`LxiRaw`（SCPI Raw Socket）**: 外部 VISA ドライバ不要で TCP 5025 等による SCPI 自動計測・IEEE 488.2 バイナリブロック取得を実現（mDNS 自動発見・LXI XML 識別同梱）。
-  * **LAN 計測器・基本通信 ②：`LxiVxi11`（VXI-11 / ONC RPC）**: Portmapper 111 / XDR による LXI Core 準拠通信、帯域外 STB・Clear・Trigger・Lock 制御を VISA レスで実現。
-  * **LAN 計測器・基本通信 ③：`LxiHiSlip`（HiSLIP / TCP 4880）**: 同期・非同期 2 チャネルおよび LXI 1.6 TLS 2.0 暗号化対応の高速大容量波形転送・厳格ロック制御。
-  * **LAN 計測器・LXI 拡張 ④：`LxiEvent`（LAN Event & Event Logs）**: UDP マルチキャスト `224.0.23.159:5044` / TCP による配線レス同期トリガおよびイベントログ取得。
-  * **LAN 計測器・LXI 拡張 ⑤：`LxiSync`（IEEE 1588 PTPv2 & WTB）**: PTP 同期状態監視・未来時刻指定一斉トリガ・タイムスタンプ整列・Wired Trigger Bus（`LXI0`〜`LXI7`）制御。
-  * **LAN 計測器・運用拡張 ⑥：`LxiMulti`（マルチ機器並列制御）**: 電源・DMM・オシロ等の複数 LXI 計測器の同時セッション保持・一斉トリガ・並列クエリ統括。
+  * **[LAN 計測器・基本通信 ①：`LxiRaw`（SCPI Raw Socket）](https://github.com/Monaca-App/TermAddIn_LxiRaw)**: 外部 VISA ドライバ不要で TCP 5025 等による SCPI 自動計測・IEEE 488.2 バイナリブロック取得を実現（mDNS 自動発見・LXI XML 識別・計測器仕様書 PDF からのコマンド定義 CSV 自動生成 AI プロンプトを用意予定）。
+  * **[LAN 計測器・基本通信 ②：`LxiVxi11`（VXI-11 / ONC RPC）](https://github.com/Monaca-App/TermAddIn_LxiVxi11)**: Portmapper 111 / XDR による LXI Core 準拠通信、帯域外 STB・Clear・Trigger・Lock 制御を VISA レスで実現。
+  * **[LAN 計測器・基本通信 ③：`LxiHiSlip`（HiSLIP / TCP 4880）](https://github.com/Monaca-App/TermAddIn_LxiHiSlip)**: 同期・非同期 2 チャネルおよび LXI 1.6 TLS 2.0 暗号化対応の高速大容量波形転送・厳格ロック制御。
+  * **[LAN 計測器・LXI 拡張 ④：`LxiEvent`（LAN Event & Event Logs）](https://github.com/Monaca-App/TermAddIn_LxiEvent)**: UDP マルチキャスト `224.0.23.159:5044` / TCP による配線レス同期トリガおよびイベントログ取得。
+  * **[LAN 計測器・LXI 拡張 ⑤：`LxiSync`（IEEE 1588 PTPv2 & WTB）](https://github.com/Monaca-App/TermAddIn_LxiSync)**: PTP 同期状態監視・未来時刻指定一斉トリガ・タイムスタンプ整列・Wired Trigger Bus（`LXI0`〜`LXI7`）制御。
+  * **[LAN 計測器・運用拡張 ⑥：`LxiMulti`（マルチ機器並列制御）](https://github.com/Monaca-App/TermAddIn_LxiMulti)**: 電源・DMM・オシロ等の複数 LXI 計測器の同時セッション保持・一斉トリガ・並列クエリ統括。
   * **無線・IoT 計測エクステンション（`BLE` / `Wireless`）**: Bluetooth Low Energy / SPP による無線センサロギング。
 
 ### 3. プロンプト自動待機・受信データ抽出（sscanf / sprintf 2次元展開）
